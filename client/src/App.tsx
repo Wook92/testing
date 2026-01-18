@@ -42,7 +42,7 @@ function ProtectedRoutes() {
   
   const isStudent = user?.role === UserRole.STUDENT;
   
-  const { data: pointsData } = useQuery<{ balance: number }>({
+  const { data: pointsData } = useQuery<{ total: number; available: number }>({
     queryKey: [`/api/points/my-points?actorId=${user?.id}`],
     enabled: isStudent && !!user,
   });
@@ -85,9 +85,9 @@ function ProtectedRoutes() {
             </div>
             <div className="flex items-center gap-2">
               {isStudent && pointsData && (
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium md:hidden">
+                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-200 dark:bg-amber-800/40 text-amber-800 dark:text-amber-200 text-xs font-semibold md:hidden border border-amber-300 dark:border-amber-700">
                   <Coins className="h-3.5 w-3.5" />
-                  <span>{pointsData.balance?.toLocaleString() ?? 0}P</span>
+                  <span>{pointsData.available?.toLocaleString() ?? 0}P</span>
                 </div>
               )}
               <NotificationBell />

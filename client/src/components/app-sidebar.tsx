@@ -113,7 +113,7 @@ export function AppSidebar() {
 
   const isStudent = user?.role === UserRole.STUDENT;
 
-  const { data: pointsData } = useQuery<{ balance: number }>({
+  const { data: pointsData } = useQuery<{ total: number; available: number }>({
     queryKey: [`/api/points/my-points?actorId=${user?.id}`],
     enabled: !!user && isStudent,
   });
@@ -269,11 +269,11 @@ export function AppSidebar() {
               </div>
             </div>
             {isStudent && pointsData && (
-              <div className="flex items-center gap-2 mt-3 px-2 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                <Coins className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                <span className="text-sm text-muted-foreground">보유 포인트</span>
-                <span className="ml-auto text-base font-bold text-amber-700 dark:text-amber-300">
-                  {pointsData.balance?.toLocaleString() ?? 0}P
+              <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-amber-200 dark:bg-amber-800/40 rounded-lg border border-amber-300 dark:border-amber-700">
+                <Coins className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+                <span className="text-sm font-medium text-amber-800 dark:text-amber-200">보유 포인트</span>
+                <span className="ml-auto text-base font-bold text-amber-900 dark:text-amber-100">
+                  {pointsData.available?.toLocaleString() ?? 0}P
                 </span>
               </div>
             )}
