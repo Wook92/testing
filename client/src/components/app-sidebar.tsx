@@ -75,6 +75,7 @@ const studentMenuItems = [
   { title: "학원 시간표", url: "/timetable", icon: Calendar },
   { title: "숙제", url: "/homework", icon: ClipboardList },
   { title: "평가", url: "/assessments", icon: BarChart3 },
+  { title: "공지사항", url: "/announcements", icon: MessageSquare },
   { title: "포인트", url: "/points", icon: Coins },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];

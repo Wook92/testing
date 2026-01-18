@@ -168,12 +168,17 @@ export default function AnnouncementsPage() {
       )
     : students;
 
-  if (!user || user.role < UserRole.TEACHER) {
+  if (!user) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <p className="text-muted-foreground">접근 권한이 없습니다</p>
+        <p className="text-muted-foreground">로그인이 필요합니다</p>
       </div>
     );
+  }
+
+  // Student view - read-only announcements
+  if (user.role === UserRole.STUDENT) {
+    return <StudentAnnouncementsView userId={user.id} />;
   }
 
   return (
@@ -458,6 +463,51 @@ export default function AnnouncementsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function StudentAnnouncementsView({ userId }: { userId: string }) {
+  const { data: announcements = [], isLoading } = useQuery<AnnouncementWithCreator[]>({
+    queryKey: [`/api/students/${userId}/announcements`],
+    enabled: !!userId,
+  });
+
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">공지사항</h1>
+        <p className="text-muted-foreground">학원에서 보내드린 공지사항을 확인하세요</p>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : announcements.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">공지사항이 없습니다</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {announcements.map((announcement: AnnouncementWithCreator) => (
+            <Card key={announcement.id}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                <CardDescription>
+                  {format(new Date(announcement.createdAt!), "yyyy년 M월 d일 HH:mm", { locale: ko })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm">{announcement.content}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

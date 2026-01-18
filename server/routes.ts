@@ -5818,10 +5818,76 @@ export async function registerRoutes(
     try {
       const allUsers = await storage.getUsers();
       const students = allUsers.filter(u => u.role === UserRole.STUDENT);
-      const grades = [...new Set(students.map(s => s.grade).filter(Boolean))].sort();
+      const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))).sort();
       res.json(grades);
     } catch (error) {
       res.status(500).json({ error: "Failed to get grades" });
+    }
+  });
+
+  // Get announcements for a specific student (filtered by targeting)
+  app.get("/api/students/:studentId/announcements", async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      const student = await storage.getUser(studentId);
+      if (!student) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+
+      const allAnnouncements = await storage.getAnnouncements();
+      
+      // Filter announcements that target this student
+      const studentAnnouncements = allAnnouncements.filter((announcement: any) => {
+        const targetType = announcement.targetType;
+        const targetIds = announcement.targetIds || [];
+        
+        // Check if student is directly targeted
+        if (targetType === "students") {
+          return targetIds.includes(studentId);
+        }
+        
+        // Check if student's grade is targeted
+        if (targetType === "grade") {
+          return student.grade && targetIds.includes(student.grade);
+        }
+        
+        // Check if student's class is targeted
+        if (targetType === "class") {
+          // We need to check if student is enrolled in any of the target classes
+          // For now, we'll need to check enrollments
+          return false; // Will be handled below with enrollments
+        }
+        
+        return false;
+      });
+
+      // For class-based targeting, we need to check enrollments
+      const studentEnrollments = await storage.getStudentEnrollments(studentId);
+      const studentClassIds = studentEnrollments.map((e: any) => e.classId);
+
+      const classTargetedAnnouncements = allAnnouncements.filter((announcement: any) => {
+        if (announcement.targetType === "class") {
+          const targetIds = announcement.targetIds || [];
+          return targetIds.some((classId: string) => studentClassIds.includes(classId));
+        }
+        return false;
+      });
+
+      // Combine and deduplicate
+      const combinedAnnouncements = [...studentAnnouncements, ...classTargetedAnnouncements];
+      const uniqueAnnouncements = Array.from(
+        new Map(combinedAnnouncements.map(a => [a.id, a])).values()
+      );
+
+      // Sort by createdAt descending
+      uniqueAnnouncements.sort((a: any, b: any) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      res.json(uniqueAnnouncements);
+    } catch (error) {
+      console.error("Error getting student announcements:", error);
+      res.status(500).json({ error: "Failed to get announcements" });
     }
   });
 
