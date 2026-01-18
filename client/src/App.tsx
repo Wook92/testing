@@ -72,7 +72,7 @@ function ProtectedRoutes() {
             <div className="flex items-center gap-2">
               <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
               <Link href="/" className="md:hidden">
-                <span className="font-bold text-lg text-primary" data-testid="link-logo-home">로고</span>
+                <img src="/logo.png" alt="학원 로고" className="h-8 w-auto" data-testid="link-logo-home" />
               </Link>
               <div className="md:hidden text-sm font-medium text-muted-foreground">
                 {user?.role !== undefined && user.role >= UserRole.TEACHER && <CenterSelector />}

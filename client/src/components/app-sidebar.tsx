@@ -181,7 +181,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3 mb-4">
-          <span className="font-bold text-xl text-primary">로고</span>
+          <img src="/logo.png" alt="학원 로고" className="h-10 w-auto" />
         </div>
         {isKiosk ? (
           <div className="flex items-center gap-3">

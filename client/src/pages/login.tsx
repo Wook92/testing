@@ -73,7 +73,7 @@ export default function LoginPage() {
             className="h-32 flex items-center justify-center" 
             data-testid="img-logo"
           >
-            <h1 className="text-4xl font-bold text-primary">로고</h1>
+            <img src="/logo.png" alt="학원 로고" className="h-28 w-auto" />
           </div>
         </div>
 
