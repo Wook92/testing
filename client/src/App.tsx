@@ -105,7 +105,7 @@ function ProtectedRoutes() {
                         설정
                       </button>
                     </Link>
-                    {canInstall && !isInstalled && (
+                    {!isInstalled && (
                       <button
                         onClick={promptInstall}
                         className="flex items-center gap-2 px-3 py-2 rounded-md text-sm w-full hover-elevate text-primary"
@@ -162,13 +162,28 @@ function ProtectedRoutes() {
       <Dialog open={showIOSInstructions} onOpenChange={setShowIOSInstructions}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>홈 화면에 추가하기 (iPhone)</DialogTitle>
+            <DialogTitle>홈 화면에 추가하기</DialogTitle>
             <DialogDescription>
               아래 안내에 따라 홈 화면에 앱을 추가해주세요
             </DialogDescription>
           </DialogHeader>
-          <div className="w-full rounded-md border p-4 bg-muted text-center text-sm text-muted-foreground">
-            Safari에서 공유 버튼을 누르고 "홈 화면에 추가"를 선택하세요.
+          <div className="space-y-4">
+            <div className="rounded-md border p-4 bg-muted">
+              <h4 className="font-medium mb-2">iPhone / iPad (Safari)</h4>
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>하단의 공유 버튼 (□↑) 누르기</li>
+                <li>"홈 화면에 추가" 선택</li>
+                <li>"추가" 버튼 누르기</li>
+              </ol>
+            </div>
+            <div className="rounded-md border p-4 bg-muted">
+              <h4 className="font-medium mb-2">Android (Chrome)</h4>
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>우측 상단 메뉴 (⋮) 누르기</li>
+                <li>"홈 화면에 추가" 또는 "앱 설치" 선택</li>
+                <li>"추가" 또는 "설치" 버튼 누르기</li>
+              </ol>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

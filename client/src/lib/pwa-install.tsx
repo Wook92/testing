@@ -62,20 +62,16 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const promptInstall = async () => {
-    if (isIOS) {
+    if (installPrompt) {
+      await installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === "accepted") {
+        setIsInstalled(true);
+      }
+      setInstallPrompt(null);
+    } else {
       setShowIOSInstructions(true);
-      return;
     }
-    
-    if (!installPrompt) return;
-
-    await installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-
-    if (outcome === "accepted") {
-      setIsInstalled(true);
-    }
-    setInstallPrompt(null);
   };
 
   return (
