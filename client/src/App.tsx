@@ -27,7 +27,6 @@ import ManualPage from "@/pages/manual";
 import TodosPage from "@/pages/todos";
 import PointsPage from "@/pages/points";
 import PointsManagementPage from "@/pages/points-management";
-import ClassPlansPage from "@/pages/class-plans";
 import { Loader2, User, Settings, LogOut, Download, Smartphone } from "lucide-react";
 import { PWAInstallProvider, usePWAInstall } from "@/lib/pwa-install";
 import { Button } from "@/components/ui/button";
@@ -140,7 +139,6 @@ function ProtectedRoutes() {
               <Route path="/manual" component={ManualPage} />
               <Route path="/points" component={PointsPage} />
               <Route path="/points-management" component={PointsManagementPage} />
-              <Route path="/class-plans" component={ClassPlansPage} />
               <Route path="/settings" component={SettingsPage} />
               <Route component={NotFound} />
             </Switch>

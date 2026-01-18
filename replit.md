@@ -68,7 +68,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Route Structure
 - `/` - Dashboard
-- `/timetable` - Class schedule
+- `/timetable` - Class schedule and class planning (integrated tabs for teachers/principals)
 - `/homework` - Homework
 - `/class-notes` - Class notes
 - `/assessments` - Assessments
@@ -78,7 +78,6 @@ Preferred communication style: Simple, everyday language.
 - `/student-reports` - Monthly student reports (manual creation with SMS to parents)
 - `/points` - Student points view
 - `/points-management` - Points management (teacher/principal)
-- `/class-plans` - Weekly/monthly class planning
 - `/manual` - User manual and documentation
 
 ### Manual Documentation
