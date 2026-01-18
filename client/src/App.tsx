@@ -39,8 +39,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { NotificationBell } from "@/components/notification-bell";
 import { HomeworkDueReminder } from "@/components/homework-due-reminder";
-import logoUrl from "@assets/1_1766865038214.png";
-import iosInstallGuide from "@assets/image_1767372224303.png";
 
 function ProtectedRoutes() {
   const { user, isLoading, logout } = useAuth();
@@ -79,7 +77,7 @@ function ProtectedRoutes() {
             <div className="flex items-center gap-2">
               <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
               <Link href="/" className="md:hidden">
-                <img src={logoUrl} alt="프라임수학" className="h-8 w-auto" data-testid="link-logo-home" />
+                <span className="font-bold text-lg text-primary" data-testid="link-logo-home">프라임수학</span>
               </Link>
               <div className="md:hidden text-sm font-medium text-muted-foreground">
                 {user?.role !== undefined && user.role >= UserRole.TEACHER && <CenterSelector />}
@@ -167,11 +165,9 @@ function ProtectedRoutes() {
               아래 안내에 따라 홈 화면에 앱을 추가해주세요
             </DialogDescription>
           </DialogHeader>
-          <img 
-            src={iosInstallGuide} 
-            alt="iOS 홈 화면 추가 안내"
-            className="w-full rounded-md border"
-          />
+          <div className="w-full rounded-md border p-4 bg-muted text-center text-sm text-muted-foreground">
+            Safari에서 공유 버튼을 누르고 "홈 화면에 추가"를 선택하세요.
+          </div>
         </DialogContent>
       </Dialog>
     </SidebarProvider>

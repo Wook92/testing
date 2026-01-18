@@ -11,7 +11,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import logoUrl from "@assets/3_1766872233229.png";
 
 const loginSchema = z.object({
   username: z.string().min(1, "학생 휴대폰 번호를 입력해주세요"),
@@ -70,12 +69,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center">
-          <img 
-            src={logoUrl} 
-            alt="프라임수학 - 수학의 깊이를 배우다" 
-            className="h-56 w-auto" 
-            data-testid="img-logo" 
-          />
+          <div 
+            className="h-32 flex items-center justify-center" 
+            data-testid="img-logo"
+          >
+            <h1 className="text-4xl font-bold text-primary">프라임수학</h1>
+          </div>
+          <p className="text-muted-foreground text-center">수학의 깊이를 배우다</p>
         </div>
 
         <Card>

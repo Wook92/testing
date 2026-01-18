@@ -8,7 +8,6 @@ import { Delete, Check, X, ArrowLeft, Settings, BookOpen, Maximize, Minimize, Lo
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import logoUrl from "@assets/1_1766865038214.png";
 import { useAuth } from "@/lib/auth-context";
 
 function useWakeLock() {
@@ -479,11 +478,9 @@ export default function AttendancePadPage() {
       <div className="flex-1 flex items-center justify-center p-2 landscape:p-4">
         <div className="flex flex-col landscape:flex-row landscape:gap-12 items-center justify-center w-full max-w-5xl">
           <div className="text-center mb-4 landscape:mb-0 landscape:flex-1 flex flex-col items-center justify-center">
-            <img 
-              src={logoUrl} 
-              alt="프라임수학" 
-              className="h-12 landscape:h-24 w-auto mx-auto mb-2 landscape:mb-4" 
-            />
+            <h1 
+              className="text-2xl landscape:text-4xl font-bold text-primary mx-auto mb-2 landscape:mb-4"
+            >프라임수학</h1>
             <div className="text-sm landscape:text-lg text-muted-foreground">
               {format(currentTime, "yyyy년 M월 d일 EEEE", { locale: ko })}
             </div>

@@ -49,7 +49,6 @@ import { RoleBadge } from "@/components/role-badge";
 import { CenterSelector } from "@/components/center-selector";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole } from "@shared/schema";
-import logoUrl from "@assets/1_1766856516611.png";
 
 const classManagementItems = [
   { title: "출결 관리", url: "/attendance", icon: UserCheck },
@@ -277,7 +276,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3 mb-4">
-          <img src={logoUrl} alt="프라임수학" className="h-10 w-auto" />
+          <span className="font-bold text-xl text-primary">프라임수학</span>
         </div>
         {isKiosk ? (
           <div className="flex items-center gap-3">
