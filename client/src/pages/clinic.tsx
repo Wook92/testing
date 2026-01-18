@@ -61,8 +61,7 @@ export default function ClinicPage() {
   const selectedClinicType = (urlParams.get("type") as "high" | "middle") || "middle";
   
   const isTeacherOrAbove = user?.role !== undefined && user.role >= UserRole.TEACHER;
-  const isClinicTeacher = user?.isClinicTeacher === true && user?.role === UserRole.CLINIC_TEACHER;
-  const canEditAll = user?.role !== undefined && user.role >= UserRole.TEACHER && !isClinicTeacher;
+  const canEditAll = user?.role !== undefined && user.role >= UserRole.TEACHER;
   
   const weekStartDate = getWeekStartDate(currentWeek);
   const currentYear = getYear(currentMonth);
@@ -686,7 +685,6 @@ export default function ClinicPage() {
                           isFirstInGroup={isFirstInGroup}
                           groupSize={studentsInGroup.length}
                           canEditAll={canEditAll}
-                          isClinicTeacher={isClinicTeacher}
                           weekStartDate={weekStartDate}
                           onEditStudent={() => setEditingStudentId(cs.id)}
                           onEditRecord={() => record && setEditingRecordId(record.id)}
@@ -713,7 +711,7 @@ export default function ClinicPage() {
         teachers={teachers}
         centerId={selectedCenter?.id || ""}
         currentUserId={user?.id || ""}
-        isAdmin={user?.role === UserRole.ADMIN || user?.role === UserRole.PRINCIPAL}
+        isAdmin={user?.role === UserRole.PRINCIPAL}
         defaultClinicType={selectedClinicType}
       />
 
@@ -733,7 +731,6 @@ export default function ClinicPage() {
         record={weeklyRecords.find(r => r.id === editingRecordId)}
         clinicStudent={clinicStudents.find(cs => weeklyRecords.find(r => r.id === editingRecordId)?.clinicStudentId === cs.id)}
         canEditAll={canEditAll}
-        isClinicTeacher={isClinicTeacher}
         weekStartDate={weekStartDate}
       />
 
@@ -882,7 +879,6 @@ function ClinicTableRow({
   isFirstInGroup,
   groupSize,
   canEditAll,
-  isClinicTeacher,
   weekStartDate,
   onEditStudent,
   onEditRecord,
@@ -900,7 +896,6 @@ function ClinicTableRow({
   isFirstInGroup: boolean;
   groupSize: number;
   canEditAll: boolean;
-  isClinicTeacher: boolean;
   weekStartDate: string;
   onEditStudent: () => void;
   onEditRecord: () => void;
@@ -2016,7 +2011,6 @@ function EditRecordDialog({
   record,
   clinicStudent,
   canEditAll,
-  isClinicTeacher,
   weekStartDate,
 }: {
   open: boolean;
@@ -2024,7 +2018,6 @@ function EditRecordDialog({
   record?: ClinicWeeklyRecord;
   clinicStudent?: ClinicStudentWithDetails;
   canEditAll: boolean;
-  isClinicTeacher: boolean;
   weekStartDate: string;
 }) {
   const { toast } = useToast();

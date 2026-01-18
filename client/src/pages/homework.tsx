@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek, isWithinInterval, subWeeks, subDays } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Upload, Check, RefreshCw, Eye, Camera, X, Users, Trash2, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Check, RefreshCw, Eye, Users, Trash2, Pencil } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -382,28 +382,6 @@ function SubmitHomeworkDialog({ homework, submission, onClose }: {
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [loadingPhotos, setLoadingPhotos] = useState(false);
-
-  // Load photos separately to reduce memory usage
-  useEffect(() => {
-    if (submission?.id) {
-      setLoadingPhotos(true);
-      fetch(`/api/homework-submissions/${submission.id}/photos`)
-        .then(res => res.json())
-        .then(data => {
-          setPhotos(data.photos || []);
-        })
-        .catch(err => {
-          console.error("Failed to load photos:", err);
-        })
-        .finally(() => {
-          setLoadingPhotos(false);
-        });
-    }
-  }, [submission?.id]);
 
   const submitMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -423,61 +401,11 @@ function SubmitHomeworkDialog({ homework, submission, onClose }: {
     },
   });
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    setUploadProgress(0);
-
-    const uploadedPaths: string[] = [];
-    const totalFiles = files.length;
-
-    for (let i = 0; i < totalFiles; i++) {
-      const file = files[i];
-      try {
-        const res = await fetch("/api/uploads/request-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: file.name,
-            size: file.size,
-            contentType: file.type,
-          }),
-        });
-
-        if (!res.ok) throw new Error("Failed to get upload URL");
-
-        const { uploadURL, objectPath } = await res.json();
-
-        const uploadRes = await fetch(uploadURL, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type },
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error(`Upload failed with status ${uploadRes.status}`);
-        }
-
-        uploadedPaths.push(objectPath);
-        setUploadProgress(Math.round(((i + 1) / totalFiles) * 100));
-      } catch (error) {
-        console.error("Upload error:", error);
-        toast({ title: "이미지 업로드에 실패했습니다", variant: "destructive" });
-      }
-    }
-
-    setPhotos((prev) => [...prev, ...uploadedPaths]);
-    setUploading(false);
-    setUploadProgress(0);
-  };
-
   const handleSubmit = () => {
     submitMutation.mutate({
       homeworkId: homework.id,
       studentId: user?.id,
-      photos,
+      photos: [],
       status: "submitted",
     });
   };
@@ -510,7 +438,6 @@ function SubmitHomeworkDialog({ homework, submission, onClose }: {
       {submission?.status === "submitted" && (
         <div className="p-3 rounded-md bg-purple-50 border border-purple-200">
           <p className="text-sm font-medium text-purple-800">제출 완료 (검사 대기중)</p>
-          <p className="text-xs text-purple-600 mt-1">아래에서 사진을 수정할 수 있습니다</p>
         </div>
       )}
 
@@ -523,70 +450,19 @@ function SubmitHomeworkDialog({ homework, submission, onClose }: {
         </div>
       )}
 
-      {user?.role === UserRole.STUDENT && (!submission || submission.status === "pending" || submission.status === "submitted" || submission.status === "resubmit") && (
-        <>
-          <div className="space-y-2">
-            <Label>사진 업로드</Label>
-            <div className="max-h-[250px] overflow-y-auto pr-1">
-              <div className="grid grid-cols-3 gap-2">
-                {photos.map((photo, i) => {
-                  const imgSrc = photo.startsWith("data:") ? photo : photo;
-                  return (
-                    <div key={i} className="relative aspect-square rounded-md overflow-hidden bg-muted group">
-                      <img src={imgSrc} alt="" className="w-full h-full object-cover" loading="lazy" />
-                      <button
-                        type="button"
-                        onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-                        data-testid={`button-delete-photo-${i}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  );
-                })}
-                <label className={cn(
-                  "aspect-square rounded-md border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors flex-col gap-1",
-                  uploading && "pointer-events-none opacity-50"
-                )}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                    disabled={uploading}
-                    data-testid="input-photo-upload"
-                  />
-                  {uploading ? (
-                    <>
-                      <RefreshCw className="h-5 w-5 text-muted-foreground animate-spin" />
-                      <span className="text-xs text-muted-foreground">{uploadProgress}%</span>
-                    </>
-                  ) : (
-                    <Camera className="h-6 w-6 text-muted-foreground" />
-                  )}
-                </label>
-              </div>
-            </div>
-            {uploading && (
-              <p className="text-xs text-muted-foreground">이미지 업로드 중... {uploadProgress}%</p>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
-              취소
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={submitMutation.isPending || uploading}
-              data-testid="button-submit-homework"
-            >
-              {submitMutation.isPending ? "제출 중..." : (submission?.status === "submitted" ? "수정 완료" : "숙제 제출")}
-            </Button>
-          </DialogFooter>
-        </>
+      {user?.role === UserRole.STUDENT && (!submission || submission.status === "pending" || submission.status === "resubmit") && (
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            취소
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={submitMutation.isPending}
+            data-testid="button-submit-homework"
+          >
+            {submitMutation.isPending ? "제출 중..." : "숙제 제출"}
+          </Button>
+        </DialogFooter>
       )}
 
       {user?.role !== UserRole.STUDENT && (!submission || submission.status === "pending" || submission.status === "resubmit") && (
@@ -765,26 +641,6 @@ function ReviewHomeworkDialog({ submission, onClose }: {
   const [completionRate, setCompletionRate] = useState(submission.completionRate || 0);
   const [feedback, setFeedback] = useState(submission.feedback || "");
   const [resubmitReason, setResubmitReason] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [loadingPhotos, setLoadingPhotos] = useState(false);
-
-  // Load photos separately to reduce memory usage
-  useEffect(() => {
-    if (submission?.id) {
-      setLoadingPhotos(true);
-      fetch(`/api/homework-submissions/${submission.id}/photos`)
-        .then(res => res.json())
-        .then(data => {
-          setPhotos(data.photos || []);
-        })
-        .catch(err => {
-          console.error("Failed to load photos:", err);
-        })
-        .finally(() => {
-          setLoadingPhotos(false);
-        });
-    }
-  }, [submission?.id]);
 
   const reviewMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -830,27 +686,6 @@ function ReviewHomeworkDialog({ submission, onClose }: {
         <h3 className="font-semibold">{submission.student?.name}의 숙제</h3>
         <p className="text-sm text-muted-foreground">{submission.homework?.title}</p>
       </div>
-
-      {loadingPhotos ? (
-        <div className="flex items-center justify-center py-4">
-          <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-sm text-muted-foreground">사진 불러오는 중...</span>
-        </div>
-      ) : photos.length > 0 && (
-        <div className="max-h-[300px] overflow-y-auto pr-1">
-          <div className="grid grid-cols-2 gap-2">
-            {photos.map((photo: string, i: number) => (
-              <img
-                key={i}
-                src={photo}
-                alt=""
-                className="w-full aspect-square object-cover rounded-md"
-                loading="lazy"
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="space-y-2">
         <Label>완성도: {completionRate}%</Label>

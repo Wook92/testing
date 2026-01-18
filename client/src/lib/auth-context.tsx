@@ -43,11 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  // For admins, fetch all centers. For others, fetch only assigned centers.
+  // For principals, fetch all centers. For others, fetch only assigned centers.
   const fetchCentersForUser = async (currentUser: User) => {
     try {
-      const isAdmin = currentUser.role >= UserRole.ADMIN;
-      const url = isAdmin ? "/api/centers" : `/api/users/${currentUser.id}/centers`;
+      const isPrincipal = currentUser.role >= UserRole.PRINCIPAL;
+      const url = isPrincipal ? "/api/centers" : `/api/users/${currentUser.id}/centers`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -98,9 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storage = rememberMe ? localStorage : sessionStorage;
         storage.setItem("user", JSON.stringify(data.user));
         
-        // For admins, fetch all centers. For others, use centers from login response.
-        const isAdmin = data.user.role >= UserRole.ADMIN;
-        if (isAdmin) {
+        // For principals, fetch all centers. For others, use centers from login response.
+        const isPrincipal = data.user.role >= UserRole.PRINCIPAL;
+        if (isPrincipal) {
           const centersRes = await fetch("/api/centers");
           if (centersRes.ok) {
             const allCenters = await centersRes.json();

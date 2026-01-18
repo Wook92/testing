@@ -784,7 +784,7 @@ export default function TextbooksPage() {
   const [selectedTextbook, setSelectedTextbook] = useState<Textbook | null>(null);
   const [editingTextbook, setEditingTextbook] = useState<Textbook | null>(null);
 
-  const isAdmin = user && user.role >= UserRole.ADMIN;
+  const isPrincipal = user && user.role >= UserRole.PRINCIPAL;
   const isTeacherOrAbove = user && user.role >= UserRole.TEACHER;
 
   const { data: textbooks, isLoading } = useQuery<Textbook[]>({
@@ -824,7 +824,7 @@ export default function TextbooksPage() {
             교재를 선택하여 풀이 영상을 확인하세요
           </p>
         </div>
-        {isAdmin && (
+        {isPrincipal && (
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-add-textbook-dialog">
@@ -882,7 +882,7 @@ export default function TextbooksPage() {
                   </CardContent>
                 </Card>
               </button>
-              {isAdmin && (
+              {isPrincipal && (
                 <div className="absolute top-2 right-2 z-10">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

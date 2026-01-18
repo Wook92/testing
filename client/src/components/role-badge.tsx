@@ -3,15 +3,10 @@ import { UserRole } from "@shared/schema";
 
 interface RoleBadgeProps {
   role: number;
-  isClinicTeacher?: boolean;
   size?: "sm" | "default";
 }
 
 const roleConfig: Record<number, { label: string; className: string }> = {
-  [UserRole.ADMIN]: {
-    label: "관리자",
-    className: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-  },
   [UserRole.PRINCIPAL]: {
     label: "원장",
     className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -34,15 +29,8 @@ const roleConfig: Record<number, { label: string; className: string }> = {
   },
 };
 
-const clinicTeacherConfig = {
-  label: "클리닉 선생님",
-  className: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
-};
-
-export function RoleBadge({ role, isClinicTeacher = false, size = "default" }: RoleBadgeProps) {
-  const config = isClinicTeacher && role === UserRole.TEACHER
-    ? clinicTeacherConfig
-    : roleConfig[role] || roleConfig[UserRole.STUDENT];
+export function RoleBadge({ role, size = "default" }: RoleBadgeProps) {
+  const config = roleConfig[role] || roleConfig[UserRole.STUDENT];
 
   return (
     <Badge

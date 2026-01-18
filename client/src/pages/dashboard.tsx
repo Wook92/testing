@@ -340,7 +340,7 @@ function TeacherDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold" data-testid="text-welcome">
-          {user?.role === UserRole.ADMIN ? "관리자" : user?.role === UserRole.PRINCIPAL ? "원장님" : "선생님"}, {user?.name}님
+          {user?.role === UserRole.PRINCIPAL ? "원장님" : "선생님"}, {user?.name}님
         </h1>
         <p className="text-muted-foreground">{today} | {selectedCenter?.name}</p>
       </div>
@@ -383,9 +383,9 @@ function TeacherDashboard() {
             />
             <StatCard
               icon={Users}
-              title={user?.role === UserRole.ADMIN ? "사용자" : "학생"}
+              title="학생"
               value={stats?.totalStudents ?? 0}
-              description={user?.role === UserRole.ADMIN ? "센터 사용자" : "내 수업 학생"}
+              description="내 수업 학생"
               variant="success"
               href="/users"
             />

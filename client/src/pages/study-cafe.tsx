@@ -39,7 +39,7 @@ export default function StudyCafePage() {
 
   const isStaff = !!user && user.role >= UserRole.TEACHER;
   const isStudent = !!user && user.role === UserRole.STUDENT;
-  const canEditPassword = !!user && (user.role === UserRole.ADMIN || user.role === UserRole.PRINCIPAL);
+  const canEditPassword = !!user && user.role === UserRole.PRINCIPAL;
 
   const { data: enabledCenters = [] } = useQuery<Center[]>({
     queryKey: ["/api/study-cafe/enabled-centers"],

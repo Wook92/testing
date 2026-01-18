@@ -3196,16 +3196,6 @@ export async function seedDatabase(): Promise<void> {
   const [dmcCenter] = await db.insert(centers).values({ name: "DMC센터" }).returning();
   const [mokdongCenter] = await db.insert(centers).values({ name: "목동센터" }).returning();
 
-  const [admin] = await db.insert(users).values({
-    username: "admin",
-    password: "1234",
-    name: "관리자",
-    phone: "01000000000",
-    role: UserRole.ADMIN,
-  }).returning();
-  await db.insert(userCenters).values({ userId: admin.id, centerId: dmcCenter.id });
-  await db.insert(userCenters).values({ userId: admin.id, centerId: mokdongCenter.id });
-
   const [principal] = await db.insert(users).values({
     username: "01011111111",
     password: "1234",

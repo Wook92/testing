@@ -1251,17 +1251,15 @@ export async function registerRoutes(
         return res.status(403).json({ error: "원장 이상만 교육비를 설정할 수 있습니다" });
       }
 
-      // Verify actor belongs to the class's center (admins can access all)
+      // Verify actor belongs to the class's center
       const cls = await storage.getClass(req.params.id);
       if (!cls) {
         return res.status(404).json({ error: "수업을 찾을 수 없습니다" });
       }
 
-      if (actor.role !== UserRole.ADMIN) {
-        const actorCenters = await storage.getUserCenters(actorId);
-        if (!actorCenters.some(c => c.id === cls.centerId)) {
-          return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
-        }
+      const actorCenters = await storage.getUserCenters(actorId);
+      if (!actorCenters.some(c => c.id === cls.centerId)) {
+        return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
       }
 
       const updated = await storage.updateClass(req.params.id, {
@@ -1451,7 +1449,7 @@ export async function registerRoutes(
       } else if (actor.role < UserRole.TEACHER) {
         // Parents cannot delete enrollments
         return res.status(403).json({ error: "선생님 이상만 수강 삭제가 가능합니다" });
-      } else if (actor.role !== UserRole.ADMIN) {
+      } else {
         // Teachers/Principals can only delete within their centers
         const actorCenters = await storage.getUserCenters(actorId);
         if (!actorCenters.some(c => c.id === cls.centerId)) {
@@ -2045,20 +2043,10 @@ export async function registerRoutes(
       // Get unique students based on role
       const studentIds = new Set<string>();
       
-      if (teacher?.role === UserRole.CLINIC_TEACHER) {
-        // For clinic_teacher, get homeroom students only
-        const centerUsers = await storage.getCenterUsers(centerId);
-        for (const user of centerUsers) {
-          if (user.role === UserRole.STUDENT && user.homeroomTeacherId === teacherId) {
-            studentIds.add(user.id);
-          }
-        }
-      } else {
-        // For regular teachers, get students enrolled in their classes
-        for (const cls of teacherClasses) {
-          const classEnrollments = await storage.getClassEnrollments(cls.id);
-          classEnrollments.forEach((e) => studentIds.add(e.studentId));
-        }
+      // Get students enrolled in teacher's classes
+      for (const cls of teacherClasses) {
+        const classEnrollments = await storage.getClassEnrollments(cls.id);
+        classEnrollments.forEach((e) => studentIds.add(e.studentId));
       }
       const totalStudents = studentIds.size;
 
@@ -2127,33 +2115,13 @@ export async function registerRoutes(
       
       const teacherStudentIds = new Set<string>();
       
-      // For clinic_teacher role, only show homeroom students' submissions
-      if (user.role === UserRole.CLINIC_TEACHER) {
-        // Get students where this teacher is the homeroom teacher
-        for (const center of centers) {
-          const allUsers = await storage.getUsers();
-          const centerUsers = await storage.getUserCenters(user.id);
-          const centerIds = centerUsers.map(c => c.id);
-          
-          for (const student of allUsers) {
-            if (student.role === UserRole.STUDENT && student.homeroomTeacherId === teacherId) {
-              // Check if student belongs to any of teacher's centers
-              const studentCenters = await storage.getUserCenters(student.id);
-              if (studentCenters.some(sc => centerIds.includes(sc.id))) {
-                teacherStudentIds.add(student.id);
-              }
-            }
-          }
-        }
-      } else {
-        // For regular teachers, get students from their classes
-        for (const center of centers) {
-          const classes = await storage.getClasses(center.id);
-          const teacherClasses = classes.filter((c) => c.teacherId === teacherId);
-          for (const cls of teacherClasses) {
-            const enrollments = await storage.getClassEnrollments(cls.id);
-            enrollments.forEach((e) => teacherStudentIds.add(e.studentId));
-          }
+      // Get students from teacher's classes
+      for (const center of centers) {
+        const classes = await storage.getClasses(center.id);
+        const teacherClasses = classes.filter((c) => c.teacherId === teacherId);
+        for (const cls of teacherClasses) {
+          const enrollments = await storage.getClassEnrollments(cls.id);
+          enrollments.forEach((e) => teacherStudentIds.add(e.studentId));
         }
       }
 
@@ -2389,7 +2357,7 @@ export async function registerRoutes(
       
       // Also notify principals in the center
       const centerUsers = await storage.getCenterUsers(classInfo.centerId);
-      const principals = centerUsers.filter(u => u.role === UserRole.PRINCIPAL || u.role === UserRole.ADMIN);
+      const principals = centerUsers.filter(u => u.role === UserRole.PRINCIPAL);
       
       for (const principal of principals) {
         await storage.createNotification({
@@ -4268,9 +4236,7 @@ export async function registerRoutes(
         const centerUsers = await storage.getCenterUsers(centerId);
         const teachers = centerUsers.filter(u => 
           u.role === UserRole.TEACHER || 
-          u.role === UserRole.CLINIC_TEACHER || 
-          u.role === UserRole.PRINCIPAL || 
-          u.role === UserRole.ADMIN
+          u.role === UserRole.PRINCIPAL
         );
 
         // Match by last 4 digits or middle 4 digits of phone number
@@ -4636,9 +4602,7 @@ export async function registerRoutes(
       const centerUsers = await storage.getCenterUsers(centerId);
       const teachers = centerUsers.filter(u => 
         u.role === UserRole.TEACHER || 
-        u.role === UserRole.CLINIC_TEACHER || 
-        u.role === UserRole.PRINCIPAL || 
-        u.role === UserRole.ADMIN
+        u.role === UserRole.PRINCIPAL
       );
 
       // Match by last 4 digits or middle 4 digits of phone number
@@ -5089,18 +5053,16 @@ export async function registerRoutes(
         return res.status(400).json({ error: "centerId and actorId are required" });
       }
       
-      // Verify actor has admin/principal role
+      // Verify actor has principal role
       const actor = await storage.getUser(actorId);
-      if (!actor || (actor.role !== UserRole.ADMIN && actor.role !== UserRole.PRINCIPAL)) {
+      if (!actor || actor.role !== UserRole.PRINCIPAL) {
         return res.status(403).json({ error: "권한이 없습니다" });
       }
       
-      // Principals must belong to the center; admins can access all centers
-      if (actor.role === UserRole.PRINCIPAL) {
-        const actorCenters = await storage.getUserCenters(actorId);
-        if (!actorCenters.some(c => c.id === centerId)) {
-          return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
-        }
+      // Principals must belong to the center
+      const actorCenters = await storage.getUserCenters(actorId);
+      if (!actorCenters.some(c => c.id === centerId)) {
+        return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
       }
       
       const settings = await storage.upsertStudyCafeSettings({ centerId, isEnabled, notice, entryPassword });
@@ -5317,12 +5279,10 @@ export async function registerRoutes(
         return res.status(403).json({ error: "선생님 이상만 고정석을 지정할 수 있습니다" });
       }
 
-      // Verify actor belongs to the target center (admins can access all)
-      if (actor.role !== UserRole.ADMIN) {
-        const actorCenters = await storage.getUserCenters(actorId);
-        if (!actorCenters.some(c => c.id === centerId)) {
-          return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
-        }
+      // Verify actor belongs to the target center
+      const actorCenters = await storage.getUserCenters(actorId);
+      if (!actorCenters.some(c => c.id === centerId)) {
+        return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
       }
 
       // Check if seat already has an active fixed seat assignment
@@ -5372,12 +5332,10 @@ export async function registerRoutes(
         return res.status(404).json({ error: "고정석을 찾을 수 없습니다" });
       }
 
-      // Verify actor belongs to the center (admins can access all)
-      if (actor.role !== UserRole.ADMIN) {
-        const actorCenters = await storage.getUserCenters(actorId);
-        if (!actorCenters.some(c => c.id === existingFixedSeat.centerId)) {
-          return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
-        }
+      // Verify actor belongs to the center
+      const actorCenters = await storage.getUserCenters(actorId);
+      if (!actorCenters.some(c => c.id === existingFixedSeat.centerId)) {
+        return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
       }
 
       const fixedSeat = await storage.updateStudyCafeFixedSeat(req.params.id, { startDate, endDate });
@@ -5406,12 +5364,10 @@ export async function registerRoutes(
         return res.status(404).json({ error: "고정석을 찾을 수 없습니다" });
       }
 
-      // Verify actor belongs to the center (admins can access all)
-      if (actor.role !== UserRole.ADMIN) {
-        const actorCenters = await storage.getUserCenters(actorId as string);
-        if (!actorCenters.some(c => c.id === existingFixedSeat.centerId)) {
-          return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
-        }
+      // Verify actor belongs to the center
+      const actorCenters = await storage.getUserCenters(actorId as string);
+      if (!actorCenters.some(c => c.id === existingFixedSeat.centerId)) {
+        return res.status(403).json({ error: "이 센터에 대한 권한이 없습니다" });
       }
 
       await storage.deleteStudyCafeFixedSeat(req.params.id);
@@ -5452,15 +5408,12 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/student-reports/generate", async (req, res) => {
+  app.post("/api/student-reports", async (req, res) => {
     try {
-      const { studentId, centerId, year, month, createdById, customInstructions } = req.body;
-      if (!studentId || !centerId || !year || !month || !createdById) {
+      const { studentId, centerId, year, month, createdById, reportContent } = req.body;
+      if (!studentId || !centerId || !year || !month || !createdById || !reportContent) {
         return res.status(400).json({ error: "All fields are required" });
       }
-
-      // Limit customInstructions to 500 characters to prevent AI token overflow
-      const limitedInstructions = customInstructions ? customInstructions.slice(0, 500) : undefined;
 
       const actor = await storage.getUser(createdById);
       if (!actor || actor.role < UserRole.TEACHER) {
@@ -5469,13 +5422,8 @@ export async function registerRoutes(
 
       const existingReport = await storage.getStudentMonthlyReportByMonth(studentId, year, month);
       if (existingReport) {
-        return res.json(existingReport);
+        return res.status(400).json({ error: "이미 해당 월에 보고서가 존재합니다" });
       }
-
-      // Dynamic import to reduce startup memory
-      const { gatherStudentData, generateReportWithAI } = await import("./services/reportGeneration");
-      const studentData = await gatherStudentData(studentId, centerId, year, month);
-      const reportContent = await generateReportWithAI(studentData, limitedInstructions);
 
       const report = await storage.createStudentMonthlyReport({
         studentId,
@@ -5483,20 +5431,20 @@ export async function registerRoutes(
         createdById,
         year,
         month,
-        reportContent,
-        customInstructions: limitedInstructions || null,
-        assessmentSummary: JSON.stringify(studentData.assessments),
-        attendanceSummary: JSON.stringify(studentData.attendance),
-        homeworkSummary: JSON.stringify(studentData.homework),
-        clinicSummary: JSON.stringify(studentData.clinic),
-        videoViewingSummary: JSON.stringify(studentData.videoViewing),
-        studyCafeSummary: JSON.stringify(studentData.studyCafe),
+        reportContent: reportContent.slice(0, 2000),
+        customInstructions: null,
+        assessmentSummary: null,
+        attendanceSummary: null,
+        homeworkSummary: null,
+        clinicSummary: null,
+        videoViewingSummary: null,
+        studyCafeSummary: null,
       });
 
       res.json(report);
     } catch (error) {
-      console.error("Error generating report:", error);
-      res.status(500).json({ error: "Failed to generate report" });
+      console.error("Error creating report:", error);
+      res.status(500).json({ error: "Failed to create report" });
     }
   });
 

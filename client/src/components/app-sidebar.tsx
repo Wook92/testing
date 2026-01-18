@@ -95,7 +95,6 @@ const principalMenuItems = [
   { title: "설정", url: "/settings", icon: Settings },
 ];
 
-const adminMenuItems = principalMenuItems;
 
 export function AppSidebar() {
   const [location] = useLocation();
@@ -108,7 +107,6 @@ export function AppSidebar() {
 
   const getMenuItems = () => {
     if (user.role === UserRole.KIOSK) return kioskMenuItems;
-    if (user.role >= UserRole.ADMIN) return adminMenuItems;
     if (user.role >= UserRole.PRINCIPAL) return principalMenuItems;
     if (user.role >= UserRole.TEACHER) return teacherMenuItems;
     if (user.role === UserRole.STUDENT) return studentMenuItems;
@@ -123,7 +121,7 @@ export function AppSidebar() {
   // Admin: after index 4 (after 사용자 관리, before 시간표 관리)
   // Principal: after index 3 (after 사용자 관리, before 시간표 관리)
   // Teacher: after index 0 (after 대시보드, at top)
-  const classManagementInsertIndex = user.role >= UserRole.ADMIN ? 5 : (user.role >= UserRole.PRINCIPAL ? 4 : 1);
+  const classManagementInsertIndex = user.role >= UserRole.PRINCIPAL ? 4 : 1;
 
   const renderMenuItem = (item: typeof menuItems[0]) => (
     <SidebarMenuItem key={item.title}>
@@ -192,7 +190,7 @@ export function AppSidebar() {
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <RoleBadge role={user.role} isClinicTeacher={false} size="sm" />
+                <RoleBadge role={user.role} size="sm" />
                 <span className="font-medium truncate" data-testid="text-user-name">{user.name}</span>
               </div>
             </div>
@@ -208,7 +206,7 @@ export function AppSidebar() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium truncate" data-testid="text-user-name">{user.name}</span>
-                  <RoleBadge role={user.role} isClinicTeacher={user.isClinicTeacher} size="sm" />
+                  <RoleBadge role={user.role} size="sm" />
                 </div>
                 <p className="text-xs text-muted-foreground truncate">{user.username}</p>
               </div>

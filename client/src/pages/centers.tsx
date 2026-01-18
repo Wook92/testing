@@ -316,7 +316,7 @@ function CenterDetailsDialog({
               <p className="font-medium">{student.name}</p>
               <p className="text-sm text-muted-foreground">{student.phone || student.username}</p>
             </div>
-            <RoleBadge role={student.role} isClinicTeacher={student.isClinicTeacher} size="sm" />
+            <RoleBadge role={student.role} size="sm" />
           </div>
         ))
       )}
@@ -337,7 +337,7 @@ function CenterDetailsDialog({
               <p className="font-medium">{teacher.name}</p>
               <p className="text-sm text-muted-foreground">{teacher.phone || teacher.username}</p>
             </div>
-            <RoleBadge role={teacher.role} isClinicTeacher={teacher.isClinicTeacher} size="sm" />
+            <RoleBadge role={teacher.role} size="sm" />
           </div>
         ))
       )}
@@ -389,7 +389,7 @@ export default function CentersPage() {
   const [solapiCenter, setSolapiCenter] = useState<any>(null);
   const [studyCafeCenter, setStudyCafeCenter] = useState<any>(null);
 
-  const isAdmin = user?.role === UserRole.ADMIN;
+  const isPrincipal = user?.role === UserRole.PRINCIPAL;
 
   const { data: centers, isLoading } = useQuery<any[]>({
     queryKey: [`/api/centers/stats`],
@@ -408,7 +408,7 @@ export default function CentersPage() {
     },
   });
 
-  if (!isAdmin) {
+  if (!isPrincipal) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <Building2 className="h-12 w-12 mx-auto mb-3 opacity-50" />

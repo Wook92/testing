@@ -2,7 +2,9 @@
 
 ## Overview
 
-This is a comprehensive academy (학원) management platform built as a responsive web application. The system integrates class scheduling, homework management, assessments, and video content delivery into a unified platform. It supports a **7-tier user role hierarchy**: Admin, Principal, Teacher, Clinic Teacher, Student, Parent, and Kiosk. Higher-level accounts inherit all permissions from lower levels. The platform features separate interfaces for students versus teachers/administrators, while both share the same underlying database for seamless data interaction. The project aims to streamline academy operations, enhance communication between stakeholders, and provide a robust learning environment.
+This is a comprehensive academy (학원) management platform built as a responsive web application. The system integrates class scheduling, homework management, assessments, and video content delivery into a unified platform. It supports a **5-tier user role hierarchy**: Principal, Teacher, Student, Parent, and Kiosk. Higher-level accounts inherit all permissions from lower levels. The platform features separate interfaces for students versus teachers/administrators, while both share the same underlying database for seamless data interaction. The project aims to streamline academy operations, enhance communication between stakeholders, and provide a robust learning environment.
+
+**Branding**: 로고 (Logo)
 
 ## User Preferences
 
@@ -33,19 +35,18 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication & Authorization
 - **Session Management**: Local storage-based auth context
-- **Role-Based Access**: Seven-tier permission hierarchy:
+- **Role-Based Access**: Five-tier permission hierarchy:
   - Kiosk Lv-1: Attendance pad only (auto-redirects to `/attendance-pad`)
   - Parent Lv0: Read-only tuition access
-  - Student Lv1: Homework, assessments, videos
-  - Teacher Lv2 / Clinic Teacher Lv2: Class management, attendance
-  - Principal Lv3: Center-wide management
-  - Admin Lv4: Full system access
-- **Kiosk Account**: Special account type for dedicated attendance pad devices. Created by Admin, automatically redirects to `/attendance-pad` on login with simplified UI and logout via settings.
+  - Student Lv1: Homework, assessments, videos, points
+  - Teacher Lv2: Class management, attendance, class notes, homework
+  - Principal Lv3: Full system access (all teacher features + center management, user management, points management)
+- **Kiosk Account**: Special account type for dedicated attendance pad devices. Created by Principal, automatically redirects to `/attendance-pad` on login with simplified UI and logout via settings.
 - **Multi-Center Support**: Users can belong to multiple centers (N:M relationship)
 - **Initial Centers**: DMC센터 and 목동센터 with sample data
 
 ### Key Features & Implementations
-- **User Management**: Multi-role accounts, password reset for Admin/Principal, homeroom teacher assignment.
+- **User Management**: Multi-role accounts, password reset for Principal, homeroom teacher assignment.
 - **Tuition Management**: Fee calculation, tuition guidance (rich text with image upload), tuition notification SMS (with SOLAPI integration), password-protected access for parents/students.
 - **Study Cafe**: Seat reservation system (2-hour student reservations, fixed staff assignments), per-center enable/disable.
 - **Class Notes**: Common class notes and student-specific notes with CRUD operations and weekly organization.
@@ -56,12 +57,12 @@ Preferred communication style: Simple, everyday language.
     - Work time calculation in minutes (displayed as hours and minutes)
     - Missing check-out records are automatically marked "퇴근 기록 없음" by midnight scheduler
     - 1-year data retention policy with automatic cleanup
-    - Management tab in `/management` page for Admin/Principal to view teacher work records with date range filter
+    - Management tab in `/management` page for Principal to view teacher work records with date range filter
 - **Clinic System**:
     - **New Template-based**: Weekly recurring workflow with persistent student profiles and weekly file/feedback records. Includes resource management with permanent/temporary files.
     - **Legacy**: Original remedial instruction tracking (retained for backward compatibility).
-- **Dashboard Analytics**: Monthly student count charts with year-over-year comparison for Admin/Principal.
-- **Marketing Calendar**: Marketing campaign tracking system in Management tab (Admin/Principal only). Features include:
+- **Dashboard Analytics**: Monthly student count charts with year-over-year comparison for Principal.
+- **Marketing Calendar**: Marketing campaign tracking system in Management tab (Principal only). Features include:
     - Campaign CRUD with name, channel, start/end dates, budget, and notes
     - Supported channels: 네이버 블로그, 네이버 검색광고, 구글 광고, 인스타그램, 페이스북, 유튜브, 카카오톡, 전단지/현수막, 지인소개 프로모션, 지역 행사, 기타
     - Year-over-year comparison bar chart showing monthly marketing spend
@@ -84,7 +85,10 @@ Preferred communication style: Simple, everyday language.
 - `/settings` - User preferences
 - `/attendance-pad` - Student attendance kiosk
 - `/tuition` - Tuition management
-- `/student-reports` - Monthly AI-generated student reports
+- `/student-reports` - Monthly student reports (manual creation with SMS to parents)
+- `/points` - Student points view
+- `/points-management` - Points management (teacher/principal)
+- `/class-plans` - Weekly/monthly class planning
 - `/study-cafe` - Study cafe seat reservations
 - `/manual` - User manual and documentation
 
@@ -115,5 +119,80 @@ Preferred communication style: Simple, everyday language.
 - **Data & Validation**: Zod, drizzle-zod, date-fns
 - **Development Tools**: Vite, Replit-specific plugins, TypeScript
 - **Database**: PostgreSQL (via `DATABASE_URL`), connect-pg-simple
-- **SMS/Messaging**: SOLAPI (for tuition notifications, per-center credentials encrypted with AES-256-GCM)
+- **SMS/Messaging**: SOLAPI (for tuition notifications and student reports, per-center credentials encrypted with AES-256-GCM)
 - **Future Integrations (Recommended)**: Toss Payments (토스페이먼츠) for online payment gateway.
+
+## Deployment Guide (Railway + Neon DB + Cloudflare R2)
+
+### Prerequisites
+- Railway account (https://railway.app)
+- Neon DB account (https://neon.tech)
+- Cloudflare R2 account (https://dash.cloudflare.com)
+
+### 1. Neon DB Setup
+1. Create a new project in Neon console
+2. Copy the connection string (DATABASE_URL)
+3. Format: `postgresql://user:password@host/database?sslmode=require`
+
+### 2. Cloudflare R2 Setup
+1. Go to Cloudflare Dashboard > R2
+2. Create a new bucket
+3. Create API tokens with read/write permissions
+4. Note down:
+   - R2_ACCOUNT_ID: Your Cloudflare account ID
+   - R2_ACCESS_KEY_ID: API token access key
+   - R2_SECRET_ACCESS_KEY: API token secret
+   - R2_BUCKET_NAME: Your bucket name
+   - R2_PUBLIC_URL: Public URL for the bucket (if using custom domain)
+
+### 3. Railway Deployment
+1. Create new project in Railway
+2. Connect your GitHub repository
+3. Add environment variables:
+   ```
+   DATABASE_URL=<neon-connection-string>
+   SESSION_SECRET=<random-secure-string>
+   NODE_ENV=production
+   R2_ACCOUNT_ID=<cloudflare-account-id>
+   R2_ACCESS_KEY_ID=<r2-access-key>
+   R2_SECRET_ACCESS_KEY=<r2-secret>
+   R2_BUCKET_NAME=<bucket-name>
+   R2_PUBLIC_URL=<public-url>
+   ```
+4. Set build command: `npm run build`
+5. Set start command: `npm start`
+6. Deploy
+
+### 4. Database Migration
+After deployment, the server will automatically create required tables on first startup.
+
+### Environment Variables Reference
+| Variable | Required | Description |
+|----------|----------|-------------|
+| DATABASE_URL | Yes | PostgreSQL connection string |
+| SESSION_SECRET | Yes | Session encryption key |
+| R2_ACCOUNT_ID | Yes | Cloudflare account ID |
+| R2_ACCESS_KEY_ID | Yes | R2 API access key |
+| R2_SECRET_ACCESS_KEY | Yes | R2 API secret |
+| R2_BUCKET_NAME | Yes | R2 bucket name |
+| R2_PUBLIC_URL | No | Public URL for R2 bucket |
+| SOLAPI_API_KEY | No | SOLAPI key for SMS |
+| SOLAPI_API_SECRET | No | SOLAPI secret |
+| SOLAPI_SENDER_NUMBER | No | SMS sender number |
+
+## Recent Changes (January 2026)
+
+### Role System Simplification
+- Removed ADMIN and CLINIC_TEACHER roles
+- PRINCIPAL now has all administrative permissions (previously ADMIN)
+- Simplified 5-tier hierarchy: PRINCIPAL > TEACHER > STUDENT > PARENT > KIOSK
+
+### Features Added
+- **Points System**: Student reward points with manual add/use by teachers and view by students
+- **Class Planning**: Weekly and monthly class planning per class
+- **Student Reports**: Monthly reports with SMS sending (AI generation removed, now manual)
+
+### Features Removed
+- Photo upload in homework management (simplified)
+- AI generation in monthly reports (replaced with manual writing)
+- Tabs removed from sidebar: 경영, 센터관리, 스터디카페, 교재영상, 교육비, 클리닉, 수업영상

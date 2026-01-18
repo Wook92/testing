@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, FileText, Sparkles, Send, RefreshCw, ChevronLeft, ChevronRight, Plus, Trash2, Clock, BookOpen, ClipboardCheck, Search } from "lucide-react";
+import { Loader2, FileText, Send, RefreshCw, ChevronLeft, ChevronRight, Plus, Trash2, Clock, BookOpen, ClipboardCheck, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { User, Center, StudentMonthlyReport, Class as ClassType } from "@shared/schema";
 import { UserRole } from "@shared/schema";
@@ -74,7 +74,7 @@ export default function StudentReportsPage() {
     enabled: !!user?.id,
   });
 
-  const availableCenters = user?.role === UserRole.ADMIN ? centers : userCenters;
+  const availableCenters = user?.role === UserRole.PRINCIPAL ? centers : userCenters;
 
   useEffect(() => {
     if (availableCenters.length > 0 && !selectedCenterId) {
@@ -126,15 +126,15 @@ export default function StudentReportsPage() {
     enabled: !!selectedCenterId,
   });
 
-  const generateReportMutation = useMutation({
-    mutationFn: async ({ studentId, instructions }: { studentId: string; instructions?: string }) => {
-      const response = await apiRequest("POST", "/api/student-reports/generate", {
+  const createReportMutation = useMutation({
+    mutationFn: async ({ studentId, content }: { studentId: string; content: string }) => {
+      const response = await apiRequest("POST", "/api/student-reports", {
         studentId,
         centerId: selectedCenterId,
         year,
         month,
         createdById: user?.id,
-        customInstructions: instructions || undefined,
+        reportContent: content,
       });
       return response.json();
     },
@@ -168,22 +168,6 @@ export default function StudentReportsPage() {
     },
   });
 
-  const refineReportMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest("POST", `/api/student-reports/${id}/refine`, {
-        actorId: user?.id,
-      });
-      return response.json();
-    },
-    onSuccess: (data: StudentMonthlyReport) => {
-      toast({ title: "보고서가 다듬어졌습니다" });
-      setEditedContent(data.reportContent);
-      refetchReports();
-    },
-    onError: (error) => {
-      toast({ title: "다듬기 실패", description: error.message, variant: "destructive" });
-    },
-  });
 
   const sendSmsMutation = useMutation({
     mutationFn: async ({ id, recipients }: { id: string; recipients: { phone: string; type: string }[] }) => {
@@ -223,9 +207,9 @@ export default function StudentReportsPage() {
     setShowGenerateDialog(true);
   };
 
-  const handleGenerateReport = () => {
-    if (generateStudentId) {
-      generateReportMutation.mutate({ studentId: generateStudentId, instructions: customInstructions });
+  const handleCreateReport = () => {
+    if (generateStudentId && customInstructions.trim()) {
+      createReportMutation.mutate({ studentId: generateStudentId, content: customInstructions });
     }
   };
 
@@ -273,11 +257,6 @@ export default function StudentReportsPage() {
     }
   };
 
-  const handleRefineReport = () => {
-    if (editingReport) {
-      refineReportMutation.mutate(editingReport.id);
-    }
-  };
 
   const handleOpenSmsDialog = (report: ReportWithDetails) => {
     setSmsReport(report);
@@ -329,7 +308,7 @@ export default function StudentReportsPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">학생 월간 보고서</h1>
-          <p className="text-muted-foreground">AI로 학생별 월간 학습 보고서를 생성하고 학부모에게 발송합니다</p>
+          <p className="text-muted-foreground">학생별 월간 학습 보고서를 작성하고 학부모에게 발송합니다</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -526,15 +505,15 @@ export default function StudentReportsPage() {
                     <Button
                       size="sm"
                       onClick={() => handleOpenGenerateDialog(student.id)}
-                      disabled={generateReportMutation.isPending}
+                      disabled={createReportMutation.isPending}
                       data-testid={`button-generate-${student.id}`}
                     >
-                      {generateReportMutation.isPending ? (
+                      {createReportMutation.isPending ? (
                         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                       ) : (
                         <Plus className="h-4 w-4 mr-1" />
                       )}
-                      보고서 생성
+                      보고서 작성
                     </Button>
                   )}
                 </CardContent>
@@ -567,19 +546,6 @@ export default function StudentReportsPage() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={handleRefineReport}
-              disabled={refineReportMutation.isPending}
-              data-testid="button-refine"
-            >
-              {refineReportMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-1" />
-              )}
-              다듬기
-            </Button>
             <Button
               onClick={handleSaveReport}
               disabled={updateReportMutation.isPending}
@@ -667,9 +633,9 @@ export default function StudentReportsPage() {
       <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>보고서 생성</DialogTitle>
+            <DialogTitle>보고서 작성</DialogTitle>
             <DialogDescription>
-              AI가 학생 데이터를 분석하여 월간 보고서를 생성합니다
+              학생의 월간 학습 보고서를 작성합니다
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -680,22 +646,22 @@ export default function StudentReportsPage() {
               </p>
             </div>
             <div>
-              <Label htmlFor="custom-instructions">AI에게 추가 요청사항 (선택)</Label>
+              <Label htmlFor="custom-instructions">보고서 내용</Label>
               <Textarea
                 id="custom-instructions"
                 value={customInstructions}
                 onChange={(e) => {
-                  if (e.target.value.length <= 500) {
+                  if (e.target.value.length <= 2000) {
                     setCustomInstructions(e.target.value);
                   }
                 }}
-                placeholder="예: 수학 실력 향상에 대해 더 강조해 주세요, 다음 달 목표도 포함해 주세요"
-                rows={4}
+                placeholder="이번 달 학습 내용, 성과, 개선점 등을 작성해 주세요"
+                rows={8}
                 className="mt-2"
                 data-testid="textarea-custom-instructions"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                AI가 보고서를 작성할 때 참고할 추가 지침을 입력하세요 ({customInstructions.length}/500자)
+                {customInstructions.length}/2000자
               </p>
             </div>
           </div>
@@ -704,16 +670,16 @@ export default function StudentReportsPage() {
               취소
             </Button>
             <Button
-              onClick={handleGenerateReport}
-              disabled={generateReportMutation.isPending}
+              onClick={handleCreateReport}
+              disabled={createReportMutation.isPending || !customInstructions.trim()}
               data-testid="button-confirm-generate"
             >
-              {generateReportMutation.isPending ? (
+              {createReportMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
               ) : (
-                <Sparkles className="h-4 w-4 mr-1" />
+                <FileText className="h-4 w-4 mr-1" />
               )}
-              보고서 생성
+              보고서 저장
             </Button>
           </DialogFooter>
         </DialogContent>

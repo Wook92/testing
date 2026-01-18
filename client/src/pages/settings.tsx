@@ -28,9 +28,7 @@ export default function SettingsPage() {
   const [isCheckInActive, setIsCheckInActive] = useState(true);
   
   const isTeacherOrHigher = user?.role === UserRole.TEACHER || 
-    user?.role === UserRole.CLINIC_TEACHER || 
-    user?.role === UserRole.PRINCIPAL || 
-    user?.role === UserRole.ADMIN;
+    user?.role === UserRole.PRINCIPAL;
 
   // Fetch existing teacher check-in settings
   const { data: checkInSettings, isLoading: isLoadingSettings } = useQuery<{

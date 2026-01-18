@@ -100,14 +100,13 @@ export function MobileNav() {
 
   if (!user) return null;
 
-  const isAdmin = user.role >= UserRole.ADMIN;
-  const isPrincipal = user.role === UserRole.PRINCIPAL;
-  const isTeacher = user.role === UserRole.TEACHER || user.role === UserRole.CLINIC_TEACHER;
+  const isPrincipal = user.role >= UserRole.PRINCIPAL;
+  const isTeacher = user.role === UserRole.TEACHER;
   const isStaff = user.role >= UserRole.TEACHER;
   const isStudent = user.role === UserRole.STUDENT;
   const isParent = user.role === UserRole.PARENT;
 
-  const allItems = isAdmin ? adminAllItems : isPrincipal ? principalAllItems : isTeacher ? teacherAllItems : isStudent ? studentAllItems : parentAllItems;
+  const allItems = isPrincipal ? principalAllItems : isTeacher ? teacherAllItems : isStudent ? studentAllItems : parentAllItems;
   
   const maxItems = isStudent ? STUDENT_VISIBLE_ITEMS : MAX_VISIBLE_ITEMS;
   const hasMoreItems = allItems.length > maxItems;

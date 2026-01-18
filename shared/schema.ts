@@ -3,12 +3,10 @@ import { pgTable, text, varchar, integer, boolean, timestamp, date, uniqueIndex 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User roles (7-tier hierarchy)
+// User roles (simplified hierarchy - ADMIN and CLINIC_TEACHER removed)
 export const UserRole = {
-  ADMIN: 4,           // 관리자 - Full system access
-  PRINCIPAL: 3,       // 원장 - Center management
+  PRINCIPAL: 3,       // 원장 - Center management + all teacher features
   TEACHER: 2,         // 선생님 - Class management
-  CLINIC_TEACHER: 2,  // 클리닉 선생님 - Same level as teacher, handles clinic instruction
   STUDENT: 1,         // 학생 - Learning activities
   PARENT: 0,          // 학부모 - Read-only access
   KIOSK: -1,          // 키오스크 - Attendance pad only
@@ -47,7 +45,6 @@ export const users = pgTable("users", {
   school: text("school"),
   grade: text("grade"),
   role: integer("role").notNull().default(1),
-  isClinicTeacher: boolean("is_clinic_teacher").notNull().default(false),
   linkedStudentIds: text("linked_student_ids").array(), // For parents: list of linked student IDs
   homeroomTeacherId: varchar("homeroom_teacher_id"), // 담임 선생님 ID
   employmentType: text("employment_type"), // 고용 형태: regular, part_time, hourly (선생님만 사용)
@@ -65,7 +62,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   school: true,
   grade: true,
   role: true,
-  isClinicTeacher: true,
   linkedStudentIds: true,
   homeroomTeacherId: true,
   employmentType: true,

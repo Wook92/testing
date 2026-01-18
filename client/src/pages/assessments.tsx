@@ -685,7 +685,7 @@ function TeacherAssessments() {
   const [editData, setEditData] = useState<{ ids: string[]; name: string; scores: number[] } | null>(null);
   const [editScores, setEditScores] = useState<number[]>([]);
 
-  const isAdminOrPrincipalOrClinic = user && (user.role >= UserRole.PRINCIPAL || user.isClinicTeacher);
+  const isPrincipal = user && user.role >= UserRole.PRINCIPAL;
   const canDeleteAssessments = user && user.role >= UserRole.TEACHER;
   const canEditAssessments = user && user.role >= UserRole.TEACHER;
 
@@ -733,7 +733,7 @@ function TeacherAssessments() {
 
   const { data: teachers } = useQuery<User[]>({
     queryKey: [`/api/centers/${selectedCenter?.id}/teachers`],
-    enabled: !!selectedCenter?.id && !!isAdminOrPrincipalOrClinic,
+    enabled: !!selectedCenter?.id && !!isPrincipal,
   });
 
   const { data: classes, isLoading: loadingClasses } = useQuery<Class[]>({
@@ -741,16 +741,16 @@ function TeacherAssessments() {
     enabled: !!selectedCenter?.id,
   });
 
-  // Set default teacher when data loads (for admin/principal/clinic)
-  if (isAdminOrPrincipalOrClinic && teachers && teachers.length > 0 && !selectedTeacher) {
+  // Set default teacher when data loads (for principal)
+  if (isPrincipal && teachers && teachers.length > 0 && !selectedTeacher) {
     setSelectedTeacher(teachers[0].id);
   }
 
-  // Filter classes by teacher (teachers only see their own classes, clinic teachers see all)
-  const isTeacherOnly = user && user.role === UserRole.TEACHER && !user.isClinicTeacher;
+  // Filter classes by teacher (teachers only see their own classes)
+  const isTeacherOnly = user && user.role === UserRole.TEACHER;
   const teacherClasses = classes?.filter((c) => {
     if (isTeacherOnly) return c.teacherId === user.id;
-    if (!isAdminOrPrincipalOrClinic) return true;
+    if (!isPrincipal) return true;
     if (!selectedTeacher) return true;
     return c.teacherId === selectedTeacher;
   }) ?? [];
@@ -783,7 +783,7 @@ function TeacherAssessments() {
     if (!aClass) return false;
     // Teachers only see their own assessments
     if (isTeacherOnly && aClass.teacherId !== user.id) return false;
-    if (isAdminOrPrincipalOrClinic && selectedTeacher && aClass.teacherId !== selectedTeacher) return false;
+    if (isPrincipal && selectedTeacher && aClass.teacherId !== selectedTeacher) return false;
     if (selectedClassFilter !== "all" && a.classId !== selectedClassFilter) return false;
     return true;
   }) ?? [];
@@ -795,7 +795,7 @@ function TeacherAssessments() {
         <p className="text-muted-foreground">평가수업 점수 입력</p>
       </div>
 
-      {isAdminOrPrincipalOrClinic && teachers && teachers.length > 0 && (
+      {isPrincipal && teachers && teachers.length > 0 && (
         <div className="space-y-3">
           <Tabs value={selectedTeacher} onValueChange={(v) => {
             setSelectedTeacher(v);

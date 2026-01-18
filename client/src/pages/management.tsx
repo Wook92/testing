@@ -185,10 +185,9 @@ export default function ManagementPage() {
   const [workEndDate, setWorkEndDate] = useState(() => format(today, "yyyy-MM-dd"));
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("all");
 
-  const isAdmin = user?.role === UserRole.ADMIN;
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
 
-  if (!isAdmin && !isPrincipal) {
+  if (!isPrincipal) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Card className="p-8 text-center">
