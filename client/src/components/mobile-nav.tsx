@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { Home, Calendar, ClipboardList, BarChart3, MoreHorizontal, Building2, Users, Settings, UserCheck, FileText, FileBarChart, GraduationCap, HelpCircle, ListTodo, TrendingUp } from "lucide-react";
+import { Home, Calendar, ClipboardList, BarChart3, MoreHorizontal, Building2, Users, Settings, UserCheck, FileText, FileBarChart, HelpCircle, ListTodo, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole } from "@shared/schema";
@@ -39,7 +39,7 @@ const teacherAllItems = [
   { title: "홈", url: "/", icon: Home },
   { title: "투두", url: "/todos", icon: ListTodo },
   { title: "시간표", url: "/timetable", icon: Calendar },
-  { title: "월간보고서", url: "/student-reports", icon: FileBarChart },
+  { title: "문자 안내", url: "/student-reports", icon: FileBarChart },
   { title: "학생", url: "/users", icon: Users },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
@@ -50,7 +50,7 @@ const principalAllItems = [
   { title: "경영", url: "/management", icon: TrendingUp },
   { title: "시간표", url: "/timetable", icon: Calendar },
   { title: "계정", url: "/users", icon: Users },
-  { title: "월간보고서", url: "/student-reports", icon: FileBarChart },
+  { title: "문자 안내", url: "/student-reports", icon: FileBarChart },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
   { title: "설정", url: "/settings", icon: Settings },
 ];
@@ -117,7 +117,7 @@ export function MobileNav() {
                 )}
                 data-testid="mobile-nav-class-management"
               >
-                <GraduationCap className="h-5 w-5" />
+                <Calendar className="h-5 w-5" />
                 <span className="text-xs font-medium">수업</span>
               </button>
             </PopoverTrigger>

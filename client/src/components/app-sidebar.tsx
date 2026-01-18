@@ -11,7 +11,7 @@ import {
   UserCheck,
   FileText,
   ChevronDown,
-  GraduationCap,
+  Coins,
   FileBarChart,
   HelpCircle,
   ListTodo,
@@ -67,7 +67,7 @@ const studentMenuItems = [
   { title: "학원 시간표", url: "/timetable", icon: Calendar },
   { title: "숙제", url: "/homework", icon: ClipboardList },
   { title: "평가", url: "/assessments", icon: BarChart3 },
-  { title: "포인트", url: "/points", icon: GraduationCap },
+  { title: "포인트", url: "/points", icon: Coins },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
@@ -75,9 +75,9 @@ const teacherMenuItems = [
   { title: "대시보드", url: "/", icon: Home },
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "수업 관리", url: "/timetable", icon: Calendar },
-  { title: "월간 보고서", url: "/student-reports", icon: FileBarChart },
+  { title: "문자 안내", url: "/student-reports", icon: FileBarChart },
   { title: "학생 관리", url: "/users", icon: Users },
-  { title: "포인트 관리", url: "/points-management", icon: GraduationCap },
+  { title: "포인트 관리", url: "/points-management", icon: Coins },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
@@ -86,8 +86,8 @@ const principalMenuItems = [
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "사용자 관리", url: "/users", icon: Users },
   { title: "수업 관리", url: "/timetable", icon: Calendar },
-  { title: "월간 보고서", url: "/student-reports", icon: FileBarChart },
-  { title: "포인트 관리", url: "/points-management", icon: GraduationCap },
+  { title: "문자 안내", url: "/student-reports", icon: FileBarChart },
+  { title: "포인트 관리", url: "/points-management", icon: Coins },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
   { title: "설정", url: "/settings", icon: Settings },
 ];
@@ -163,7 +163,7 @@ export function AppSidebar() {
             isActive={classManagementUrls.some(url => location.startsWith(url.split("?")[0]))}
             data-testid="nav-class-management"
           >
-            <GraduationCap className="h-4 w-4" />
+            <Calendar className="h-4 w-4" />
             <span>수업 관리</span>
             <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
           </SidebarMenuButton>
