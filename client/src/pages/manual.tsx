@@ -7,9 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  BookOpen, Users, Calendar, ClipboardList, FileText, Video, 
-  Stethoscope, DollarSign, Settings, 
-  UserCheck, Home, Building2, Info, Coffee, FileBarChart, BarChart3
+  BookOpen, Users, Calendar, ClipboardList, FileText, Settings, 
+  UserCheck, Home, Building2, Info, FileBarChart, BarChart3
 } from "lucide-react";
 import { UserRole } from "@shared/schema";
 
@@ -50,7 +49,7 @@ const principalSections: ManualSection[] = [
       },
       {
         title: "빠른 현황 카드",
-        description: "오늘의 출석, 숙제 제출률, 클리닉 현황 등을 카드 형태로 확인합니다.",
+        description: "오늘의 출석, 숙제 제출률 등을 카드 형태로 확인합니다.",
         steps: [
           "각 카드를 클릭하면 해당 상세 페이지로 이동합니다",
           "숫자가 빨간색이면 주의가 필요한 항목입니다"
@@ -252,112 +251,6 @@ const principalSections: ManualSection[] = [
     lastUpdated: "2025-01"
   },
   {
-    id: "study-cafe",
-    title: "스터디카페",
-    icon: Coffee,
-    description: "스터디카페 좌석을 관리하는 페이지입니다.",
-    features: [
-      {
-        title: "좌석 배치 관리",
-        description: "스터디카페 좌석을 추가하거나 삭제합니다.",
-        steps: [
-          "'편집 모드' 버튼을 클릭합니다",
-          "빈 공간을 클릭하여 새 좌석을 추가합니다",
-          "기존 좌석을 클릭하여 삭제할 수 있습니다",
-          "'저장' 버튼을 클릭하여 완료합니다"
-        ]
-      },
-      {
-        title: "고정석 배정",
-        description: "직원(선생님)에게 전용 고정 좌석을 배정합니다.",
-        steps: [
-          "좌석을 클릭합니다",
-          "'고정석 배정' 옵션을 선택합니다",
-          "담당 직원(선생님)을 선택합니다",
-          "'저장'을 클릭하여 완료합니다"
-        ]
-      },
-      {
-        title: "예약 현황 확인",
-        description: "학생들의 좌석 예약 현황을 실시간으로 확인합니다.",
-        steps: [
-          "좌석 배치도에서 색상으로 상태를 구분합니다",
-          "초록색: 이용 가능, 빨간색: 사용 중, 회색: 고정석",
-          "좌석을 클릭하면 예약자 정보가 표시됩니다"
-        ]
-      },
-      {
-        title: "예약 강제 종료",
-        description: "필요한 경우 학생의 예약을 관리자가 종료할 수 있습니다.",
-        steps: [
-          "사용 중인 좌석을 클릭합니다",
-          "'예약 종료' 버튼을 클릭합니다",
-          "확인 메시지에서 '종료'를 선택합니다"
-        ]
-      }
-    ],
-    tips: [
-      "센터별로 스터디카페 활성화/비활성화를 설정할 수 있습니다",
-      "고정석은 해당 직원 전용으로 예약되어 학생이 사용할 수 없습니다",
-      "피크 시간대에는 예약 현황을 자주 확인하세요"
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
-    id: "tuition",
-    title: "교육비",
-    icon: DollarSign,
-    description: "교육비 안내문을 작성하고 학부모/학생에게 발송하는 페이지입니다.",
-    features: [
-      {
-        title: "교육비 안내 작성",
-        description: "학생별 교육비 안내문을 작성합니다.",
-        steps: [
-          "학생을 선택합니다",
-          "'새 안내문 작성' 버튼을 클릭합니다",
-          "안내문 제목을 입력합니다",
-          "교육비 내역을 입력합니다",
-          "필요시 이미지를 첨부합니다",
-          "'저장' 버튼을 클릭합니다"
-        ]
-      },
-      {
-        title: "SMS 발송",
-        description: "작성한 교육비 안내를 SMS로 발송합니다.",
-        steps: [
-          "발송할 안내문을 선택합니다",
-          "'SMS 발송' 버튼을 클릭합니다",
-          "발송 대상(학생/학부모)을 확인합니다",
-          "'발송' 버튼을 클릭합니다"
-        ]
-      },
-      {
-        title: "비밀번호 설정",
-        description: "교육비 조회용 비밀번호를 설정합니다.",
-        steps: [
-          "'비밀번호 설정' 버튼을 클릭합니다",
-          "새 비밀번호를 입력합니다",
-          "'저장'을 클릭하여 완료합니다"
-        ]
-      },
-      {
-        title: "안내문 이력 조회",
-        description: "과거에 발송한 교육비 안내문을 확인합니다.",
-        steps: [
-          "학생을 선택합니다",
-          "이전 안내문 목록이 날짜순으로 표시됩니다",
-          "안내문을 클릭하면 내용을 확인할 수 있습니다"
-        ]
-      }
-    ],
-    tips: [
-      "교육비 정보는 비밀번호로 보호됩니다",
-      "SMS 발송에는 SOLAPI 연동이 필요합니다 (설정에서 API 키 등록)",
-      "월별로 안내문을 발송하면 관리가 편리합니다"
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
     id: "attendance",
     title: "출결 관리",
     icon: UserCheck,
@@ -419,51 +312,6 @@ const principalSections: ManualSection[] = [
     lastUpdated: "2025-01"
   },
   {
-    id: "textbooks",
-    title: "교재 영상",
-    icon: BookOpen,
-    description: "교재 해설 및 풀이 영상을 관리하는 페이지입니다.",
-    features: [
-      {
-        title: "교재 등록",
-        description: "새로운 교재를 등록합니다.",
-        steps: [
-          "'교재 추가' 버튼을 클릭합니다",
-          "교재명을 입력합니다",
-          "과목을 선택합니다",
-          "학년을 선택합니다",
-          "'저장'을 클릭하여 완료합니다"
-        ]
-      },
-      {
-        title: "풀이 영상 업로드",
-        description: "교재별 풀이 영상을 업로드합니다.",
-        steps: [
-          "교재를 선택합니다",
-          "'영상 추가' 버튼을 클릭합니다",
-          "영상 제목(단원/페이지 등)을 입력합니다",
-          "YouTube URL을 입력합니다",
-          "'저장'을 클릭하여 완료합니다"
-        ]
-      },
-      {
-        title: "영상 순서 정렬",
-        description: "풀이 영상의 순서를 조정합니다.",
-        steps: [
-          "교재를 선택합니다",
-          "'순서 편집' 버튼을 클릭합니다",
-          "드래그 앤 드롭으로 순서를 변경합니다",
-          "'저장'을 클릭하여 완료합니다"
-        ]
-      }
-    ],
-    tips: [
-      "YouTube 영상 URL만 지원됩니다",
-      "학년과 과목으로 교재를 구분하면 학생이 찾기 쉽습니다"
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
     id: "settings",
     title: "설정",
     icon: Settings,
@@ -493,7 +341,6 @@ const principalSections: ManualSection[] = [
         description: "센터별 기능 활성화를 관리합니다.",
         steps: [
           "센터를 선택합니다",
-          "스터디카페 활성화 여부를 설정합니다",
           "SOLAPI SMS 연동 정보를 입력합니다"
         ]
       }
@@ -738,103 +585,6 @@ const teacherSections: ManualSection[] = [
     lastUpdated: "2025-01"
   },
   {
-    id: "clinic",
-    title: "클리닉",
-    icon: Stethoscope,
-    description: "보충 수업이 필요한 학생을 관리하고 클리닉 진행 상황을 기록하는 페이지입니다.",
-    features: [
-      {
-        title: "클리닉 학생 등록",
-        description: "클리닉 대상 학생을 등록합니다.",
-        steps: [
-          "'학생 추가' 버튼을 클릭합니다",
-          "학생을 검색하여 선택합니다",
-          "클리닉 유형을 선택합니다",
-          "담당 선생님을 지정합니다",
-          "'저장'을 클릭합니다"
-        ]
-      },
-      {
-        title: "주차별 클리닉 기록",
-        description: "매주 클리닉 진행 상황과 피드백을 기록합니다.",
-        steps: [
-          "학생을 선택합니다",
-          "해당 주차를 선택합니다",
-          "클리닉 내용을 상세히 기록합니다",
-          "학생에게 줄 피드백을 작성합니다",
-          "'저장'을 클릭합니다"
-        ]
-      },
-      {
-        title: "클리닉 자료 관리",
-        description: "클리닉에 사용할 자료를 업로드하고 관리합니다.",
-        steps: [
-          "'자료' 탭으로 이동합니다",
-          "'파일 업로드' 버튼을 클릭합니다",
-          "상시 자료 또는 임시 자료를 선택합니다",
-          "파일을 선택하여 업로드합니다"
-        ]
-      },
-      {
-        title: "클리닉 종료",
-        description: "클리닉이 완료된 학생을 종료 처리합니다.",
-        steps: [
-          "학생을 선택합니다",
-          "'클리닉 종료' 버튼을 클릭합니다",
-          "종료 사유를 입력합니다"
-        ]
-      }
-    ],
-    tips: [
-      "임시 자료는 14일 후 자동 삭제됩니다",
-      "상시 자료는 영구 보관되므로 중요한 자료는 상시로 저장하세요",
-      "주차별로 꾸준히 기록하면 학생의 발전 과정을 추적할 수 있습니다"
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
-    id: "videos",
-    title: "수업 영상",
-    icon: Video,
-    description: "학습 영상을 업로드하고 관리하는 페이지입니다.",
-    features: [
-      {
-        title: "영상 업로드",
-        description: "새로운 학습 영상을 등록합니다.",
-        steps: [
-          "'영상 추가' 버튼을 클릭합니다",
-          "영상 제목을 입력합니다",
-          "영상 설명을 입력합니다",
-          "YouTube URL을 입력합니다",
-          "카테고리를 선택합니다",
-          "'저장'을 클릭합니다"
-        ]
-      },
-      {
-        title: "영상 수정/삭제",
-        description: "등록된 영상 정보를 수정하거나 삭제합니다.",
-        steps: [
-          "수정할 영상을 선택합니다",
-          "'수정' 또는 '삭제' 버튼을 클릭합니다",
-          "변경 사항을 저장합니다"
-        ]
-      },
-      {
-        title: "카테고리 관리",
-        description: "영상 카테고리를 추가하거나 수정합니다.",
-        steps: [
-          "'카테고리 관리' 버튼을 클릭합니다",
-          "새 카테고리를 추가하거나 기존 카테고리를 수정합니다"
-        ]
-      }
-    ],
-    tips: [
-      "YouTube에 영상을 먼저 업로드한 후 URL을 등록하세요",
-      "카테고리로 구분하면 학생이 원하는 영상을 찾기 쉽습니다"
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
     id: "student-reports",
     title: "월간 보고서",
     icon: FileBarChart,
@@ -902,58 +652,6 @@ const teacherSections: ManualSection[] = [
     ],
     lastUpdated: "2025-01"
   },
-  {
-    id: "study-cafe",
-    title: "스터디카페",
-    icon: Coffee,
-    description: "스터디카페 좌석 현황을 확인하는 페이지입니다.",
-    features: [
-      {
-        title: "좌석 현황 확인",
-        description: "현재 좌석 이용 현황을 실시간으로 확인합니다.",
-        steps: [
-          "좌석 배치도에서 색상으로 상태를 구분합니다",
-          "초록색: 이용 가능, 빨간색: 사용 중"
-        ]
-      },
-      {
-        title: "예약 현황 확인",
-        description: "학생들의 좌석 예약 현황을 확인합니다.",
-        steps: [
-          "사용 중인 좌석을 클릭합니다",
-          "예약자 정보와 이용 시간이 표시됩니다"
-        ]
-      }
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
-    id: "textbooks",
-    title: "교재 영상",
-    icon: BookOpen,
-    description: "교재 해설 및 풀이 영상을 관리하는 페이지입니다.",
-    features: [
-      {
-        title: "풀이 영상 업로드",
-        description: "교재별 풀이 영상을 업로드합니다.",
-        steps: [
-          "교재를 선택합니다",
-          "'영상 추가' 버튼을 클릭합니다",
-          "영상 제목과 YouTube URL을 입력합니다",
-          "'저장'을 클릭합니다"
-        ]
-      },
-      {
-        title: "영상 시청",
-        description: "등록된 풀이 영상을 시청합니다.",
-        steps: [
-          "교재를 선택합니다",
-          "원하는 영상을 클릭하여 시청합니다"
-        ]
-      }
-    ],
-    lastUpdated: "2025-01"
-  }
 ];
 
 const studentSections: ManualSection[] = [
@@ -1110,160 +808,10 @@ const studentSections: ManualSection[] = [
     ],
     tips: [
       "평가 결과가 나오면 알림이 표시됩니다",
-      "성적이 낮은 부분은 클리닉 수업으로 보충할 수 있습니다"
+      "성적이 낮은 부분은 보충 수업으로 보완할 수 있습니다"
     ],
     lastUpdated: "2025-01"
   },
-  {
-    id: "study-cafe",
-    title: "스터디카페",
-    icon: Coffee,
-    description: "스터디카페 좌석을 예약하고 이용하는 페이지입니다.",
-    features: [
-      {
-        title: "좌석 현황 확인",
-        description: "현재 이용 가능한 좌석을 확인합니다.",
-        steps: [
-          "스터디카페 페이지로 이동합니다",
-          "좌석 배치도가 표시됩니다",
-          "초록색: 이용 가능, 빨간색: 사용 중, 회색: 고정석(사용 불가)"
-        ]
-      },
-      {
-        title: "좌석 예약",
-        description: "원하는 좌석을 예약합니다.",
-        steps: [
-          "이용 가능한(초록색) 좌석을 클릭합니다",
-          "이용 시간을 선택합니다 (최대 2시간)",
-          "'예약' 버튼을 클릭합니다",
-          "예약 완료 메시지가 표시됩니다"
-        ]
-      },
-      {
-        title: "예약 취소",
-        description: "예약한 좌석을 취소합니다.",
-        steps: [
-          "내가 예약한 좌석을 클릭합니다",
-          "'예약 취소' 버튼을 클릭합니다",
-          "확인 메시지에서 '취소'를 선택합니다"
-        ]
-      },
-      {
-        title: "이용 시간 확인",
-        description: "남은 이용 시간을 확인합니다.",
-        steps: [
-          "내 좌석을 클릭하면 남은 시간이 표시됩니다"
-        ]
-      }
-    ],
-    tips: [
-      "학생은 최대 2시간까지 예약할 수 있습니다",
-      "이용 시간이 지나면 자동으로 좌석이 반납됩니다",
-      "회색 좌석은 선생님 전용 고정석입니다"
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
-    id: "videos",
-    title: "수업 영상",
-    icon: Video,
-    description: "선생님이 올린 학습 영상을 시청하는 페이지입니다.",
-    features: [
-      {
-        title: "영상 목록 확인",
-        description: "등록된 학습 영상 목록을 확인합니다.",
-        steps: [
-          "수업 영상 페이지로 이동합니다",
-          "카테고리별로 영상이 정리되어 있습니다",
-          "원하는 카테고리를 선택합니다"
-        ]
-      },
-      {
-        title: "영상 시청",
-        description: "원하는 영상을 시청합니다.",
-        steps: [
-          "시청할 영상을 클릭합니다",
-          "영상 플레이어가 열립니다",
-          "재생 버튼을 클릭하여 시청합니다"
-        ]
-      },
-      {
-        title: "영상 검색",
-        description: "원하는 영상을 검색합니다.",
-        steps: [
-          "검색창에 키워드를 입력합니다",
-          "관련 영상이 검색 결과로 표시됩니다"
-        ]
-      }
-    ],
-    tips: [
-      "수업 복습이나 예습에 활용하세요",
-      "이해가 안 되는 부분은 반복 시청하세요"
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
-    id: "textbooks",
-    title: "교재 영상",
-    icon: BookOpen,
-    description: "교재 해설 및 풀이 영상을 시청하는 페이지입니다.",
-    features: [
-      {
-        title: "교재 선택",
-        description: "보고 싶은 교재를 선택합니다.",
-        steps: [
-          "교재 영상 페이지로 이동합니다",
-          "교재 목록에서 내가 사용하는 교재를 찾습니다",
-          "과목과 학년으로 필터링할 수 있습니다"
-        ]
-      },
-      {
-        title: "풀이 영상 시청",
-        description: "교재별 풀이 영상을 시청합니다.",
-        steps: [
-          "교재를 선택합니다",
-          "해당 교재의 풀이 영상 목록이 표시됩니다",
-          "원하는 단원/페이지의 영상을 클릭합니다",
-          "영상을 시청합니다"
-        ]
-      }
-    ],
-    tips: [
-      "교재 문제를 먼저 풀어본 후 풀이 영상을 확인하세요",
-      "이해가 안 되는 문제는 영상을 반복 시청하세요"
-    ],
-    lastUpdated: "2025-01"
-  },
-  {
-    id: "tuition",
-    title: "교육비",
-    icon: DollarSign,
-    description: "나의 교육비 내역을 확인하는 페이지입니다.",
-    features: [
-      {
-        title: "교육비 확인",
-        description: "이번 달 교육비 안내를 확인합니다.",
-        steps: [
-          "교육비 페이지로 이동합니다",
-          "비밀번호를 입력합니다",
-          "교육비 내역이 표시됩니다"
-        ]
-      },
-      {
-        title: "과거 내역 확인",
-        description: "이전 달의 교육비 안내를 확인합니다.",
-        steps: [
-          "교육비 페이지에서 월을 선택합니다",
-          "해당 월의 교육비 내역이 표시됩니다"
-        ]
-      }
-    ],
-    tips: [
-      "교육비 정보는 비밀번호로 보호됩니다",
-      "비밀번호를 잊은 경우 선생님께 문의하세요"
-    ],
-    lastUpdated: "2025-01"
-  }
 ];
 
 const roleManualMap: Record<RoleType, { title: string; sections: ManualSection[] }> = {

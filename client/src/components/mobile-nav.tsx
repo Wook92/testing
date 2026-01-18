@@ -1,5 +1,5 @@
-import { useLocation, useSearch, Link } from "wouter";
-import { Home, Calendar, ClipboardList, BarChart3, Video, BookOpen, MoreHorizontal, Building2, Users, Settings, Stethoscope, UserCheck, FileText, Coffee, DollarSign, FileBarChart, GraduationCap, HelpCircle, ListTodo, TrendingUp } from "lucide-react";
+import { useLocation, Link } from "wouter";
+import { Home, Calendar, ClipboardList, BarChart3, MoreHorizontal, Building2, Users, Settings, UserCheck, FileText, FileBarChart, GraduationCap, HelpCircle, ListTodo, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole } from "@shared/schema";
@@ -14,26 +14,17 @@ const studentTimetableItems = [
   { title: "학원 시간표", url: "/timetable", icon: Building2 },
 ];
 
-const studentVideoItems = [
-  { title: "수업영상", url: "/videos", icon: Video },
-  { title: "교재영상", url: "/textbooks", icon: BookOpen },
-];
-
 const classManagementItems = [
   { title: "출결 관리", url: "/attendance", icon: UserCheck },
   { title: "숙제 관리", url: "/homework", icon: ClipboardList },
   { title: "수업 기록", url: "/class-notes", icon: FileText },
   { title: "평가 관리", url: "/assessments", icon: BarChart3 },
-  { title: "고등클리닉", url: "/clinic?type=high", icon: Stethoscope },
-  { title: "중등클리닉", url: "/clinic?type=middle", icon: Stethoscope },
-  { title: "수업 영상", url: "/videos", icon: Video },
 ];
 
 const classManagementUrls = classManagementItems.map(item => item.url.split("?")[0]);
 
 const parentAllItems = [
   { title: "홈", url: "/", icon: Home },
-  { title: "교육비", url: "/tuition", icon: DollarSign },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
@@ -41,8 +32,6 @@ const studentAllItems = [
   { title: "홈", url: "/", icon: Home },
   { title: "숙제", url: "/homework", icon: ClipboardList },
   { title: "평가", url: "/assessments", icon: BarChart3 },
-  { title: "스카", url: "/study-cafe", icon: Coffee },
-  { title: "교육비", url: "/tuition", icon: DollarSign },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
@@ -52,8 +41,6 @@ const teacherAllItems = [
   { title: "시간표", url: "/timetable", icon: Calendar },
   { title: "월간보고서", url: "/student-reports", icon: FileBarChart },
   { title: "학생", url: "/users", icon: Users },
-  { title: "스터디카페", url: "/study-cafe", icon: Coffee },
-  { title: "교재영상", url: "/textbooks", icon: BookOpen },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
@@ -64,39 +51,18 @@ const principalAllItems = [
   { title: "시간표", url: "/timetable", icon: Calendar },
   { title: "계정", url: "/users", icon: Users },
   { title: "월간보고서", url: "/student-reports", icon: FileBarChart },
-  { title: "스터디카페", url: "/study-cafe", icon: Coffee },
-  { title: "교재영상", url: "/textbooks", icon: BookOpen },
-  { title: "교육비", url: "/tuition", icon: DollarSign },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
   { title: "설정", url: "/settings", icon: Settings },
 ];
 
-const adminAllItems = [
-  { title: "홈", url: "/", icon: Home },
-  { title: "투두", url: "/todos", icon: ListTodo },
-  { title: "경영", url: "/management", icon: TrendingUp },
-  { title: "시간표", url: "/timetable", icon: Calendar },
-  { title: "센터", url: "/centers", icon: Building2 },
-  { title: "계정", url: "/users", icon: Users },
-  { title: "월간보고서", url: "/student-reports", icon: FileBarChart },
-  { title: "스터디카페", url: "/study-cafe", icon: Coffee },
-  { title: "교재영상", url: "/textbooks", icon: BookOpen },
-  { title: "교육비", url: "/tuition", icon: DollarSign },
-  { title: "매뉴얼", url: "/manual", icon: HelpCircle },
-  { title: "설정", url: "/settings", icon: Settings },
-];
 
 export function MobileNav() {
   const [location, setLocation] = useLocation();
-  const searchString = useSearch();
   const { user } = useAuth();
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [timetableMenuOpen, setTimetableMenuOpen] = useState(false);
-  const [studentVideoMenuOpen, setStudentVideoMenuOpen] = useState(false);
   const [classManagementMenuOpen, setClassManagementMenuOpen] = useState(false);
   
-  const urlParams = new URLSearchParams(searchString);
-  const currentClinicType = urlParams.get("type") || "middle";
 
   if (!user) return null;
 
@@ -116,7 +82,6 @@ export function MobileNav() {
   const navItems = isStaff ? allItems.slice(0, staffVisibleCount) : allItems.slice(0, visibleCount);
   const moreItems = isStaff ? allItems.slice(staffVisibleCount) : (hasMoreItems ? allItems.slice(visibleCount) : []);
   
-  const isVideoActive = location === "/videos" || location === "/textbooks";
   const isMoreActive = moreItems.some(item => location === item.url);
   const isTimetableActive = location === "/my-timetable" || location === "/timetable";
   const isClassManagementActive = classManagementUrls.includes(location);
@@ -159,12 +124,7 @@ export function MobileNav() {
             <PopoverContent className="w-44 p-2" align="center" side="top">
               <div className="flex flex-col gap-1">
                 {classManagementItems.map((item) => {
-                  const itemPath = item.url.split("?")[0];
-                  const itemParams = new URLSearchParams(item.url.split("?")[1] || "");
-                  const itemType = itemParams.get("type");
-                  const isActive = itemType 
-                    ? (location === itemPath && currentClinicType === itemType)
-                    : (location === item.url);
+                  const isActive = location === item.url;
                   return (
                     <button
                       key={item.url}
@@ -176,7 +136,7 @@ export function MobileNav() {
                         "flex items-center gap-2 px-3 py-2 rounded-md text-sm hover-elevate",
                         isActive && "bg-accent"
                       )}
-                      data-testid={`mobile-nav-class-${item.url.replace("/", "").replace("?", "-")}`}
+                      data-testid={`mobile-nav-class-${item.url.replace("/", "")}`}
                     >
                       <item.icon className="h-4 w-4" />
                       {item.title}
@@ -226,43 +186,6 @@ export function MobileNav() {
           </Popover>
         )}
         
-        {isStudent && (
-          <Popover open={studentVideoMenuOpen} onOpenChange={setStudentVideoMenuOpen}>
-            <PopoverTrigger asChild>
-              <button
-                className={cn(
-                  "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-                  isVideoActive ? "text-primary" : "text-muted-foreground"
-                )}
-                data-testid="mobile-nav-student-videos"
-              >
-                <Video className="h-5 w-5" />
-                <span className="text-xs font-medium">영상</span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-44 p-2" align="end" side="top">
-              <div className="flex flex-col gap-1">
-                {studentVideoItems.map((item) => (
-                  <button
-                    key={item.url}
-                    onClick={() => {
-                      setLocation(item.url);
-                      setStudentVideoMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm hover-elevate",
-                      location === item.url && "bg-accent"
-                    )}
-                    data-testid={`mobile-nav-student-video-${item.url.replace("/", "")}`}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.title}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
         
         {moreItems.length > 0 && (
           <Popover open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>

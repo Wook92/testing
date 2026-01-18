@@ -37,8 +37,8 @@ Preferred communication style: Simple, everyday language.
 - **Session Management**: Local storage-based auth context
 - **Role-Based Access**: Five-tier permission hierarchy:
   - Kiosk Lv-1: Attendance pad only (auto-redirects to `/attendance-pad`)
-  - Parent Lv0: Read-only tuition access
-  - Student Lv1: Homework, assessments, videos, points
+  - Parent Lv0: Read-only access
+  - Student Lv1: Homework, assessments, points
   - Teacher Lv2: Class management, attendance, class notes, homework
   - Principal Lv3: Full system access (all teacher features + center management, user management, points management)
 - **Kiosk Account**: Special account type for dedicated attendance pad devices. Created by Principal, automatically redirects to `/attendance-pad` on login with simplified UI and logout via settings.
@@ -47,8 +47,6 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Features & Implementations
 - **User Management**: Multi-role accounts, password reset for Principal, homeroom teacher assignment.
-- **Tuition Management**: Fee calculation, tuition guidance (rich text with image upload), tuition notification SMS (with SOLAPI integration), password-protected access for parents/students.
-- **Study Cafe**: Seat reservation system (2-hour student reservations, fixed staff assignments), per-center enable/disable.
 - **Class Notes**: Common class notes and student-specific notes with CRUD operations and weekly organization.
 - **Attendance System**: Student check-in via PIN on kiosk pad, attendance management, PIN management, message templates for notifications.
 - **Teacher Work Records**: Teacher check-in/check-out tracking via attendance pad. Features include:
@@ -58,9 +56,6 @@ Preferred communication style: Simple, everyday language.
     - Missing check-out records are automatically marked "퇴근 기록 없음" by midnight scheduler
     - 1-year data retention policy with automatic cleanup
     - Management tab in `/management` page for Principal to view teacher work records with date range filter
-- **Clinic System**:
-    - **New Template-based**: Weekly recurring workflow with persistent student profiles and weekly file/feedback records. Includes resource management with permanent/temporary files.
-    - **Legacy**: Original remedial instruction tracking (retained for backward compatibility).
 - **Dashboard Analytics**: Monthly student count charts with year-over-year comparison for Principal.
 - **Marketing Calendar**: Marketing campaign tracking system in Management tab (Principal only). Features include:
     - Campaign CRUD with name, channel, start/end dates, budget, and notes
@@ -77,19 +72,13 @@ Preferred communication style: Simple, everyday language.
 - `/homework` - Homework
 - `/class-notes` - Class notes
 - `/assessments` - Assessments
-- `/clinic` - Clinic management
-- `/videos` - Video content
-- `/textbooks` - Textbook resources
 - `/users` - User management
-- `/centers` - Center management
 - `/settings` - User preferences
 - `/attendance-pad` - Student attendance kiosk
-- `/tuition` - Tuition management
 - `/student-reports` - Monthly student reports (manual creation with SMS to parents)
 - `/points` - Student points view
 - `/points-management` - Points management (teacher/principal)
 - `/class-plans` - Weekly/monthly class planning
-- `/study-cafe` - Study cafe seat reservations
 - `/manual` - User manual and documentation
 
 ### Manual Documentation
