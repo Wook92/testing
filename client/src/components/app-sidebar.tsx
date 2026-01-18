@@ -253,28 +253,31 @@ export function AppSidebar() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {user.name.slice(0, 2)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium truncate" data-testid="text-user-name">{user.name}</span>
-                <RoleBadge role={user.role} size="sm" />
+          <>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {user.name.slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium truncate" data-testid="text-user-name">{user.name}</span>
+                  <RoleBadge role={user.role} size="sm" />
+                </div>
+                <p className="text-xs text-muted-foreground truncate">{user.username}</p>
               </div>
-              <p className="text-xs text-muted-foreground truncate">{user.username}</p>
             </div>
             {isStudent && pointsData && (
-              <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full">
-                <Coins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-                  {pointsData.balance?.toLocaleString() ?? 0}
+              <div className="flex items-center gap-2 mt-3 px-2 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                <Coins className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <span className="text-sm text-muted-foreground">보유 포인트</span>
+                <span className="ml-auto text-base font-bold text-amber-700 dark:text-amber-300">
+                  {pointsData.balance?.toLocaleString() ?? 0}P
                 </span>
               </div>
             )}
-          </div>
+          </>
         )}
       </SidebarHeader>
 
