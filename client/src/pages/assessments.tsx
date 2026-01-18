@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, subMonths, addMonths, startOfMonth, endOfMonth, getWeek, startOfWeek, endOfWeek, differenceInCalendarWeeks, eachWeekOfInterval } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, BarChart3, TrendingUp, TrendingDown, Minus, ChevronDown, Trophy, Trash2, Pencil } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine, LineChart, Line, Legend } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -411,8 +411,8 @@ function ScoreInputDialog({ classItem, students, allCenterStudents, onClose }: {
   );
 }
 
-function WeeklyBarChart({ data, title, showLegend = true }: { 
-  data: { week: string; myScore: number; classAverage: number }[]; 
+function DateLineChart({ data, title, showLegend = true }: { 
+  data: { date: string; dateLabel: string; myScore: number; classAverage: number; testName?: string }[]; 
   title?: string;
   showLegend?: boolean;
 }) {
@@ -424,28 +424,35 @@ function WeeklyBarChart({ data, title, showLegend = true }: {
           {showLegend && (
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#1E3A5F" }} />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#3B82F6" }} />
                 <span>내 점수</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#8B2942" }} />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#EF4444" }} />
                 <span>반 평균</span>
               </div>
             </div>
           )}
         </div>
       )}
-      <div className="h-40">
+      <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barGap={4} margin={{ left: -20, right: 10 }}>
+          <LineChart data={data} margin={{ left: -20, right: 10, top: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="week" fontSize={11} tickLine={false} axisLine={false} />
+            <XAxis dataKey="dateLabel" fontSize={10} tickLine={false} axisLine={false} />
             <YAxis domain={[0, 100]} fontSize={11} tickLine={false} axisLine={false} width={30} />
             <Tooltip 
               formatter={(value: number, name: string) => [
                 `${value}점`,
                 name === "myScore" ? "내 점수" : "반 평균"
               ]}
+              labelFormatter={(label: string, payload: any[]) => {
+                const item = payload?.[0]?.payload;
+                if (item?.testName) {
+                  return `${label} - ${item.testName}`;
+                }
+                return label;
+              }}
               contentStyle={{
                 borderRadius: "8px",
                 border: "1px solid hsl(var(--border))",
@@ -453,9 +460,23 @@ function WeeklyBarChart({ data, title, showLegend = true }: {
                 fontSize: "12px",
               }}
             />
-            <Bar dataKey="myScore" fill="#1E3A5F" radius={[3, 3, 0, 0]} maxBarSize={35} />
-            <Bar dataKey="classAverage" fill="#8B2942" radius={[3, 3, 0, 0]} maxBarSize={35} />
-          </BarChart>
+            <Line 
+              type="monotone" 
+              dataKey="myScore" 
+              stroke="#3B82F6" 
+              strokeWidth={2}
+              dot={{ fill: "#3B82F6", r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="classAverage" 
+              stroke="#EF4444" 
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              dot={{ fill: "#EF4444", r: 3 }}
+            />
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </div>
@@ -488,32 +509,21 @@ function StudentAssessments() {
     return acc;
   }, {}) || {};
 
-  // Get weekly chart data for a specific class or all classes
-  const getWeeklyChartDataForClass = (classAssessments: any[]) => {
-    const weekMap = new Map<number, { scores: number[], averages: number[] }>();
-    
-    classAssessments.forEach((a) => {
-      const date = new Date(a.assessmentDate);
-      const weekNum = getWeekOfMonth(date);
-      
-      if (!weekMap.has(weekNum)) {
-        weekMap.set(weekNum, { scores: [], averages: [] });
-      }
-      weekMap.get(weekNum)!.scores.push(a.score);
-      weekMap.get(weekNum)!.averages.push(a.average);
-    });
-
-    return Array.from(weekMap.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([weekNum, data]) => ({
-        week: `${weekNum}주차`,
-        myScore: Math.round(data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length),
-        classAverage: Math.round(data.averages.reduce((sum, s) => sum + s, 0) / data.averages.length),
+  // Get date-based chart data for assessments
+  const getDateChartData = (classAssessments: any[]) => {
+    return classAssessments
+      .sort((a, b) => new Date(a.assessmentDate).getTime() - new Date(b.assessmentDate).getTime())
+      .map((a) => ({
+        date: a.assessmentDate,
+        dateLabel: format(new Date(a.assessmentDate), "M/d"),
+        myScore: a.score,
+        classAverage: a.average,
+        testName: a.name || undefined,
       }));
   };
 
-  // Overall weekly chart (all classes combined)
-  const overallChartData = assessments?.length ? getWeeklyChartDataForClass(assessments) : [];
+  // Overall date-based chart (all assessments sorted by date)
+  const overallChartData = assessments?.length ? getDateChartData(assessments) : [];
   
   // Overall averages
   const overallMyAverage = assessments?.length 
@@ -570,11 +580,11 @@ function StudentAssessments() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Overall Summary Section */}
+              {/* Overall Summary Section with Date-based Line Chart */}
               {overallChartData.length > 0 && (
                 <div className="space-y-4 p-4 rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">전체 평가 종합</h3>
+                    <h3 className="text-sm font-semibold">전체 평가 성적 추이</h3>
                     <div className="flex items-center gap-3">
                       <Badge variant="outline" className="text-sm">
                         내 평균: {overallMyAverage}점
@@ -584,13 +594,13 @@ function StudentAssessments() {
                       </Badge>
                     </div>
                   </div>
-                  <WeeklyBarChart data={overallChartData} title="전체 주차별 성적" />
+                  <DateLineChart data={overallChartData} title="날짜별 성적 추이" />
                 </div>
               )}
 
               {/* Per-Class Charts Section */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground">수업별 주차 성적</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">수업별 성적 추이</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   {Object.entries(groupedByClass).map(([classId, classAssessments]) => {
                     const firstAssessment = classAssessments[0];
@@ -599,7 +609,7 @@ function StudentAssessments() {
                     const isFirst = firstAssessment.isFirst;
                     const studentMonthlyAvg = firstAssessment.studentMonthlyAverage || 0;
                     const classAvg = firstAssessment.average || 0;
-                    const classChartData = getWeeklyChartDataForClass(classAssessments);
+                    const classChartData = getDateChartData(classAssessments);
 
                     return (
                       <Card key={classId} className="p-4">
@@ -621,7 +631,7 @@ function StudentAssessments() {
                         <p className="text-xs text-muted-foreground mb-3">
                           {classAssessments.length}회 평가 | 내 월평균: {studentMonthlyAvg}점 | 반 평균: {classAvg}점
                         </p>
-                        <WeeklyBarChart data={classChartData} showLegend={false} />
+                        <DateLineChart data={classChartData} showLegend={false} />
                       </Card>
                     );
                   })}
