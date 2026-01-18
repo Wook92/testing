@@ -450,28 +450,11 @@ function SubmitHomeworkDialog({ homework, submission, onClose }: {
         </div>
       )}
 
-      {user?.role === UserRole.STUDENT && (!submission || submission.status === "pending" || submission.status === "resubmit") && (
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            취소
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={submitMutation.isPending}
-            data-testid="button-submit-homework"
-          >
-            {submitMutation.isPending ? "제출 중..." : "숙제 제출"}
-          </Button>
-        </DialogFooter>
-      )}
-
-      {user?.role !== UserRole.STUDENT && (!submission || submission.status === "pending" || submission.status === "resubmit") && (
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            닫기
-          </Button>
-        </DialogFooter>
-      )}
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          닫기
+        </Button>
+      </DialogFooter>
     </div>
   );
 }
@@ -1156,7 +1139,7 @@ export default function HomeworkPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {isTeacherOrAbove ? "숙제 검사" : "미완료 숙제"}
+              {isTeacherOrAbove ? "숙제 검사" : "숙제"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1341,34 +1324,129 @@ export default function HomeworkPage() {
                 </TabsContent>
               </Tabs>
             ) : (
-              <div className="space-y-3">
-                {filteredHomework
-                  .filter((hw) => {
-                    const sub = filteredSubmissions.find((s) => s.homeworkId === hw.id);
-                    return !sub || sub.status === "pending" || sub.status === "resubmit";
-                  })
-                  .map((hw) => {
-                    const sub = filteredSubmissions.find((s) => s.homeworkId === hw.id);
-                    return (
-                      <button
-                        key={hw.id}
-                        onClick={() => setSelectedHomework(hw)}
-                        className="w-full p-3 rounded-md bg-muted/50 text-left hover-elevate"
-                        data-testid={`homework-item-${hw.id}`}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <span className="font-medium break-words flex-1 min-w-0">{hw.title}</span>
-                          <Badge variant={sub?.status === "resubmit" ? "destructive" : "outline"} className="flex-shrink-0">
-                            {sub?.status === "resubmit" ? "재제출" : "미제출"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          마감: {format(new Date(hw.dueDate), "M월 d일", { locale: ko })}
-                        </p>
-                      </button>
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid grid-cols-3 w-full h-auto gap-1 mb-3">
+                  <TabsTrigger value="all" className="text-xs sm:text-sm" data-testid="student-tab-all">
+                    전체
+                  </TabsTrigger>
+                  <TabsTrigger value="thisWeek" className="text-xs sm:text-sm" data-testid="student-tab-this-week">
+                    이번주
+                  </TabsTrigger>
+                  <TabsTrigger value="today" className="text-xs sm:text-sm" data-testid="student-tab-today">
+                    오늘
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="all" className="mt-0 space-y-3">
+                  {filteredHomework.length === 0 ? (
+                    <p className="text-center py-8 text-muted-foreground">숙제가 없습니다</p>
+                  ) : (
+                    [...filteredHomework].sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()).map((hw) => {
+                      const sub = filteredSubmissions.find((s) => s.homeworkId === hw.id);
+                      return (
+                        <button
+                          key={hw.id}
+                          onClick={() => setSelectedHomework(hw)}
+                          className="w-full p-3 rounded-md bg-muted/50 text-left hover-elevate"
+                          data-testid={`homework-item-${hw.id}`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <span className="font-medium break-words flex-1 min-w-0">{hw.title}</span>
+                            {sub?.status === "reviewed" || sub?.status === "in_person" ? (
+                              <Badge variant="secondary" className="flex-shrink-0">완료</Badge>
+                            ) : sub?.status === "submitted" ? (
+                              <Badge variant="outline" className="flex-shrink-0">제출됨</Badge>
+                            ) : sub?.status === "resubmit" ? (
+                              <Badge variant="destructive" className="flex-shrink-0">재제출</Badge>
+                            ) : (
+                              <Badge variant="outline" className="flex-shrink-0">미제출</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            마감: {format(new Date(hw.dueDate), "M월 d일", { locale: ko })}
+                          </p>
+                        </button>
+                      );
+                    })
+                  )}
+                </TabsContent>
+                <TabsContent value="thisWeek" className="mt-0 space-y-3">
+                  {(() => {
+                    const weekStart = startOfWeek(new Date(), { locale: ko });
+                    const weekEnd = endOfWeek(new Date(), { locale: ko });
+                    const thisWeekHomework = filteredHomework.filter((hw) => {
+                      const dueDate = new Date(hw.dueDate);
+                      return isWithinInterval(dueDate, { start: weekStart, end: weekEnd });
+                    });
+                    return thisWeekHomework.length === 0 ? (
+                      <p className="text-center py-8 text-muted-foreground">이번주 숙제가 없습니다</p>
+                    ) : (
+                      [...thisWeekHomework].sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()).map((hw) => {
+                        const sub = filteredSubmissions.find((s) => s.homeworkId === hw.id);
+                        return (
+                          <button
+                            key={hw.id}
+                            onClick={() => setSelectedHomework(hw)}
+                            className="w-full p-3 rounded-md bg-muted/50 text-left hover-elevate"
+                            data-testid={`homework-week-${hw.id}`}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <span className="font-medium break-words flex-1 min-w-0">{hw.title}</span>
+                              {sub?.status === "reviewed" || sub?.status === "in_person" ? (
+                                <Badge variant="secondary" className="flex-shrink-0">완료</Badge>
+                              ) : sub?.status === "submitted" ? (
+                                <Badge variant="outline" className="flex-shrink-0">제출됨</Badge>
+                              ) : sub?.status === "resubmit" ? (
+                                <Badge variant="destructive" className="flex-shrink-0">재제출</Badge>
+                              ) : (
+                                <Badge variant="outline" className="flex-shrink-0">미제출</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              마감: {format(new Date(hw.dueDate), "M월 d일", { locale: ko })}
+                            </p>
+                          </button>
+                        );
+                      })
                     );
-                  })}
-              </div>
+                  })()}
+                </TabsContent>
+                <TabsContent value="today" className="mt-0 space-y-3">
+                  {(() => {
+                    const todayHomework = filteredHomework.filter((hw) => isSameDay(new Date(hw.dueDate), new Date()));
+                    return todayHomework.length === 0 ? (
+                      <p className="text-center py-8 text-muted-foreground">오늘 마감 숙제가 없습니다</p>
+                    ) : (
+                      todayHomework.map((hw) => {
+                        const sub = filteredSubmissions.find((s) => s.homeworkId === hw.id);
+                        return (
+                          <button
+                            key={hw.id}
+                            onClick={() => setSelectedHomework(hw)}
+                            className="w-full p-3 rounded-md bg-muted/50 text-left hover-elevate"
+                            data-testid={`homework-today-${hw.id}`}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <span className="font-medium break-words flex-1 min-w-0">{hw.title}</span>
+                              {sub?.status === "reviewed" || sub?.status === "in_person" ? (
+                                <Badge variant="secondary" className="flex-shrink-0">완료</Badge>
+                              ) : sub?.status === "submitted" ? (
+                                <Badge variant="outline" className="flex-shrink-0">제출됨</Badge>
+                              ) : sub?.status === "resubmit" ? (
+                                <Badge variant="destructive" className="flex-shrink-0">재제출</Badge>
+                              ) : (
+                                <Badge variant="outline" className="flex-shrink-0">미제출</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              마감: {format(new Date(hw.dueDate), "M월 d일", { locale: ko })}
+                            </p>
+                          </button>
+                        );
+                      })
+                    );
+                  })()}
+                </TabsContent>
+              </Tabs>
             )}
           </CardContent>
         </Card>

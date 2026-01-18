@@ -97,7 +97,7 @@ function StudentDashboard() {
         />
         <StatCard
           icon={ClipboardList}
-          title="미완료 숙제"
+          title="숙제"
           value={pendingHomework?.length ?? 0}
           description="제출 필요"
           variant="warning"
@@ -170,7 +170,7 @@ function StudentDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ClipboardList className="h-5 w-5" />
-              미완료 숙제
+              숙제
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -183,7 +183,7 @@ function StudentDashboard() {
             ) : pendingHomework?.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <ClipboardList className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>미완료 숙제가 없습니다</p>
+                <p>숙제가 없습니다</p>
               </div>
             ) : (
               <div className="space-y-3">
