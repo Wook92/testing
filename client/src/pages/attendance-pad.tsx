@@ -368,7 +368,7 @@ export default function AttendancePadPage() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 space-y-6">
             <div className="flex justify-center">
-              <img src="/logo.png" alt="로고" className="h-12 object-contain" />
+              <img src="/logo.png" alt="로고" className="h-24 object-contain" />
             </div>
             <h2 className="text-xl font-semibold text-center">출결 패드 설정</h2>
             {isKioskUser && (
@@ -442,7 +442,7 @@ export default function AttendancePadPage() {
             <img 
               src="/logo.png" 
               alt="로고" 
-              className="h-12 landscape:h-16 mb-3 landscape:mb-4 object-contain"
+              className="h-24 landscape:h-32 mb-3 landscape:mb-4 object-contain"
             />
             <div className="text-sm landscape:text-lg text-muted-foreground">
               {format(currentTime, "yyyy년 M월 d일 EEEE", { locale: ko })}
