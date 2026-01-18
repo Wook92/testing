@@ -51,7 +51,7 @@ type StudentWithAttendance = User & {
 };
 
 export default function AttendancePage() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -60,25 +60,22 @@ export default function AttendancePage() {
   const [checkInMessage, setCheckInMessage] = useState("[프라임수학] {학생명} 학생이 {시간}에 출석하였습니다.");
   const [lateMessage, setLateMessage] = useState("[프라임수학] {학생명} 학생이 수업에 참여하지 않았습니다. 빠르게 등원할 수 있도록 해주세요.");
   const [checkOutMessage, setCheckOutMessage] = useState("[프라임수학] {학생명} 학생이 {시간}에 하원하였습니다.");
-  const [teacherCheckInMessage, setTeacherCheckInMessage] = useState("[{센터명}] {선생님명} 선생님 출근 확인 ({시간})");
+  const [teacherCheckInMessage, setTeacherCheckInMessage] = useState("[학원] {선생님명} 선생님 출근 확인 ({시간})");
 
   const isTeacher = user?.role === UserRole.TEACHER;
   const isPrincipalOrAdmin = user?.role && user.role >= UserRole.PRINCIPAL;
 
-  // Get teachers and principals for principal/admin view
-  const { data: allCenterUsers = [], isLoading: teachersLoading } = useQuery<User[]>({
-    queryKey: [`/api/users?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && !!isPrincipalOrAdmin,
+  const { data: allUsers = [], isLoading: teachersLoading } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    enabled: !!isPrincipalOrAdmin,
   });
   
-  // Filter to show teachers and principals (role 2 and 3)
-  const teachers = allCenterUsers.filter(u => u.role === UserRole.TEACHER || u.role === UserRole.PRINCIPAL);
+  const teachers = allUsers.filter(u => u.role === UserRole.TEACHER || u.role === UserRole.PRINCIPAL);
 
-  // Get classes for selected teacher (or current user if teacher)
   const teacherIdForClasses = isTeacher ? user?.id : selectedTeacherId;
   const { data: classes = [], isLoading: classesLoading } = useQuery<Class[]>({
-    queryKey: [`/api/teachers/${teacherIdForClasses}/classes?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && !!teacherIdForClasses,
+    queryKey: [`/api/teachers/${teacherIdForClasses}/classes`],
+    enabled: !!teacherIdForClasses,
   });
 
   // Get students with attendance for selected class
@@ -92,7 +89,6 @@ export default function AttendancePage() {
     mutationFn: async ({ studentId, status }: { studentId: string; status: string }) => {
       const res = await apiRequest("PATCH", "/api/attendance/update-status", {
         studentId,
-        centerId: selectedCenter?.id,
         classId: selectedClassId,
         status,
       });
@@ -116,7 +112,6 @@ export default function AttendancePage() {
     mutationFn: async ({ studentId, type }: { studentId: string; type: "check_in" | "late" }) => {
       const res = await apiRequest("POST", "/api/attendance/send-sms", {
         studentId,
-        centerId: selectedCenter?.id,
         classId: selectedClassId,
         type,
       });
@@ -140,7 +135,6 @@ export default function AttendancePage() {
     mutationFn: async ({ studentId, isLate }: { studentId: string; isLate: boolean }) => {
       const res = await apiRequest("POST", "/api/attendance/manual-checkin", {
         studentId,
-        centerId: selectedCenter?.id,
         classId: selectedClassId,
         isLate,
       });
@@ -162,9 +156,7 @@ export default function AttendancePage() {
   // Auto-generate PINs mutation
   const generatePinsMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/attendance-pins/auto-generate", {
-        centerId: selectedCenter?.id,
-      });
+      const res = await apiRequest("POST", "/api/attendance-pins/auto-generate", {});
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Failed to generate PINs");
@@ -181,8 +173,8 @@ export default function AttendancePage() {
 
   // Get message templates
   const { data: templates = [] } = useQuery<MessageTemplate[]>({
-    queryKey: [`/api/message-templates?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && activeTab === "settings",
+    queryKey: ["/api/message-templates"],
+    enabled: activeTab === "settings",
   });
 
   // Load templates into state when fetched
@@ -212,7 +204,6 @@ export default function AttendancePage() {
         }));
       } else {
         requests.push(apiRequest("POST", "/api/message-templates", {
-          centerId: selectedCenter?.id,
           type: "check_in",
           title: "등원 알림",
           body: checkInMessage,
@@ -225,7 +216,6 @@ export default function AttendancePage() {
         }));
       } else {
         requests.push(apiRequest("POST", "/api/message-templates", {
-          centerId: selectedCenter?.id,
           type: "late",
           title: "지각 알림",
           body: lateMessage,
@@ -238,7 +228,6 @@ export default function AttendancePage() {
         }));
       } else {
         requests.push(apiRequest("POST", "/api/message-templates", {
-          centerId: selectedCenter?.id,
           type: "check_out",
           title: "하원 알림",
           body: checkOutMessage,
@@ -256,11 +245,11 @@ export default function AttendancePage() {
     },
   });
 
-  // Get all teacher check-in settings for this center (for admin/principal)
+  // Get all teacher check-in settings (for admin/principal)
   type TeacherCheckInWithUser = TeacherCheckInSettings & { teacher?: User };
   const { data: teacherCheckInSettingsList = [] } = useQuery<TeacherCheckInWithUser[]>({
-    queryKey: [`/api/teacher-check-in-settings/all?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && activeTab === "settings" && !!isPrincipalOrAdmin,
+    queryKey: ["/api/teacher-check-in-settings/all"],
+    enabled: activeTab === "settings" && !!isPrincipalOrAdmin,
   });
 
   // Load teacher check-in message template from first settings or use default
@@ -629,7 +618,7 @@ export default function AttendancePage() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-            <AttendanceHistorySection centerId={selectedCenter?.id || ""} />
+            <AttendanceHistorySection />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">
@@ -767,7 +756,7 @@ export default function AttendancePage() {
 type Enrollment = { id: string; classId: string; studentId: string };
 type ClassWithEnrollment = Class & { enrollment?: Enrollment };
 
-function AttendanceHistorySection({ centerId }: { centerId: string }) {
+function AttendanceHistorySection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>("all");
@@ -775,8 +764,7 @@ function AttendanceHistorySection({ centerId }: { centerId: string }) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   
   const { data: students = [], isLoading: studentsLoading } = useQuery<User[]>({
-    queryKey: [`/api/users?centerId=${centerId}&role=1`],
-    enabled: !!centerId,
+    queryKey: ["/api/users?role=1"],
   });
 
   const studentsOnly = students.filter(s => s.role === 1);

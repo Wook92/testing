@@ -25,14 +25,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 function StudentExitDialog({ 
   student, 
-  centerId, 
   recordedBy,
   onConfirm, 
   onCancel,
   isDeleting 
 }: { 
   student: User; 
-  centerId: string;
   recordedBy: string;
   onConfirm: (reasons: string[], notes: string) => void; 
   onCancel: () => void;
@@ -130,7 +128,7 @@ function StudentExitDialog({
   );
 }
 
-function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: Center[]; onClose: () => void; teacherOnly?: boolean }) {
+function CreateUserDialog({ onClose, teacherOnly = false }: { onClose: () => void; teacherOnly?: boolean }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -140,12 +138,10 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
     fatherPhone: "",
     school: "",
     grade: "",
-    role: teacherOnly ? "2" : "1", // Default to teacher role when teacherOnly
-    centerIds: [] as string[],
+    role: teacherOnly ? "2" : "1",
     attendancePin: "",
-    employmentType: "regular" as string, // 고용 형태: regular, part_time, hourly
-    dailyRate: "" as string, // 일급 (아르바이트용)
-    // 정규직/파트타임 급여 설정
+    employmentType: "regular" as string,
+    dailyRate: "" as string,
     baseSalary: "" as string,
     classBasePayMiddle: "" as string,
     classBasePayHigh: "" as string,
@@ -155,14 +151,12 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
     perStudentBonusHigh: "" as string,
   });
 
-  // Teacher check-in settings state
   const [teacherCheckInCode, setTeacherCheckInCode] = useState("");
   const [teacherSmsRecipient1, setTeacherSmsRecipient1] = useState("");
   const [teacherSmsRecipient2, setTeacherSmsRecipient2] = useState("");
 
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
   const isTeacherRole = formData.role === "2";
-  // Show teacher check-in settings for admin/principal when creating any teacher (including teacherOnly mode)
   const canSetTeacherCheckIn = isPrincipal && isTeacherRole;
 
   const createMutation = useMutation({
@@ -176,7 +170,6 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
       onClose();
     },
     onError: (error: any) => {
-      // Use server error message if available (from ApiError)
       const serverMessage = error instanceof ApiError ? error.serverMessage : null;
       const message = serverMessage || "계정 생성에 실패했습니다";
       toast({ title: message, variant: "destructive" });
@@ -185,30 +178,23 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.centerIds.length === 0) {
-      toast({ title: "센터를 선택해주세요", variant: "destructive" });
-      return;
-    }
     if ((teacherOnly || formData.role === "1") && !formData.motherPhone && !formData.fatherPhone) {
       toast({ title: "어머니 또는 아버지 전화번호를 입력해주세요", variant: "destructive" });
       return;
     }
-    // Validate teacher check-in code if provided
     if (canSetTeacherCheckIn && teacherCheckInCode && !/^\d{4}$/.test(teacherCheckInCode)) {
       toast({ title: "출근코드는 4자리 숫자여야 합니다", variant: "destructive" });
       return;
     }
     const roleValue = parseInt(formData.role);
 
-    // Build teacher check-in settings array (one per selected center)
-    let teacherCheckInSettings: { centerId: string; checkInCode: string; smsRecipient1: string | null; smsRecipient2: string | null }[] | undefined;
+    let teacherCheckInSettings: { checkInCode: string; smsRecipient1: string | null; smsRecipient2: string | null } | undefined;
     if (canSetTeacherCheckIn && teacherCheckInCode) {
-      teacherCheckInSettings = formData.centerIds.map(centerId => ({
-        centerId,
+      teacherCheckInSettings = {
         checkInCode: teacherCheckInCode,
         smsRecipient1: teacherSmsRecipient1 || null,
         smsRecipient2: teacherSmsRecipient2 || null,
-      }));
+      };
     }
     
     // Build salary settings for regular/part-time teachers
@@ -259,7 +245,6 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
       school: formData.school || null,
       grade: formData.grade || null,
       role: roleValue,
-      centerIds: formData.centerIds,
       attendancePin: formData.attendancePin || null,
       teacherCheckInSettings,
       employmentType: isTeacherRole ? formData.employmentType : null,
@@ -268,15 +253,6 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
         : null,
       salarySettings,
     });
-  };
-
-  const toggleCenter = (centerId: string) => {
-    setFormData((p) => ({
-      ...p,
-      centerIds: p.centerIds.includes(centerId)
-        ? p.centerIds.filter((id) => id !== centerId)
-        : [...p.centerIds, centerId],
-    }));
   };
 
   const availableRoles = isPrincipal
@@ -607,32 +583,6 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
         </>
       )}
 
-      <div className="space-y-2">
-        <Label>센터 (복수 선택 가능)</Label>
-        <div className="space-y-2 border rounded-md p-3">
-          {centers.map((center) => (
-            <label
-              key={center.id}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={formData.centerIds.includes(center.id)}
-                onChange={() => toggleCenter(center.id)}
-                className="h-4 w-4 rounded border-input"
-                data-testid={`checkbox-center-${center.id}`}
-              />
-              <span className="text-sm">{center.name}</span>
-            </label>
-          ))}
-        </div>
-        {formData.centerIds.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            선택됨: {formData.centerIds.length}개 센터
-          </p>
-        )}
-      </div>
-
       <p className="text-sm text-muted-foreground">
         기본 비밀번호: 1234
       </p>
@@ -649,7 +599,7 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
   );
 }
 
-function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; centers: Center[]; onClose: () => void }) {
+function EditUserDialog({ user: editingUser, onClose }: { user: User; onClose: () => void }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -677,38 +627,21 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
   const [teacherCheckInCode, setTeacherCheckInCode] = useState("");
   const [teacherSmsRecipient1, setTeacherSmsRecipient1] = useState("");
   const [teacherSmsRecipient2, setTeacherSmsRecipient2] = useState("");
-  const [selectedTeacherCenterId, setSelectedTeacherCenterId] = useState<string>("");
 
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
   const isStudent = editingUser.role === UserRole.STUDENT;
   const isEditingTeacher = editingUser.role === UserRole.TEACHER;
-  const canEditTeacherSettings = (isPrincipal || isPrincipal) && isEditingTeacher;
+  const canEditTeacherSettings = isPrincipal && isEditingTeacher;
 
-  const { data: userCenters } = useQuery<Center[]>({
-    queryKey: ["/api/users", editingUser.id, "centers"],
-  });
-
-  const [selectedCenterIds, setSelectedCenterIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (userCenters) {
-      setSelectedCenterIds(userCenters.map(c => c.id));
-      // For teacher settings, default to first center
-      if (userCenters.length > 0 && !selectedTeacherCenterId) {
-        setSelectedTeacherCenterId(userCenters[0].id);
-      }
-    }
-  }, [userCenters, selectedTeacherCenterId]);
-
-  // Fetch existing teacher check-in settings for selected center
+  // Fetch existing teacher check-in settings
   const { data: teacherCheckInSettings } = useQuery<{
     id: string;
     checkInCode: string;
     smsRecipient1: string | null;
     smsRecipient2: string | null;
   } | null>({
-    queryKey: [`/api/teacher-check-in-settings?teacherId=${editingUser.id}&centerId=${selectedTeacherCenterId}`],
-    enabled: !!selectedTeacherCenterId && canEditTeacherSettings,
+    queryKey: [`/api/teacher-check-in-settings?teacherId=${editingUser.id}`],
+    enabled: canEditTeacherSettings,
   });
 
   // Populate teacher check-in settings when data loads
@@ -718,18 +651,16 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
       setTeacherSmsRecipient1(teacherCheckInSettings.smsRecipient1 || "");
       setTeacherSmsRecipient2(teacherCheckInSettings.smsRecipient2 || "");
     } else {
-      // Reset fields when no settings exist for selected center
       setTeacherCheckInCode("");
       setTeacherSmsRecipient1("");
       setTeacherSmsRecipient2("");
     }
-  }, [teacherCheckInSettings, selectedTeacherCenterId]);
+  }, [teacherCheckInSettings]);
 
   // Fetch existing salary settings for teacher
   type SalarySettingsType = {
     id: string;
     teacherId: string;
-    centerId: string;
     baseSalary: number;
     classBasePay: number;
     classBasePayMiddle: number;
@@ -743,8 +674,8 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
   };
 
   const { data: salarySettings } = useQuery<SalarySettingsType | null>({
-    queryKey: [`/api/teacher-salary-settings/${editingUser.id}?centerId=${selectedTeacherCenterId}`],
-    enabled: !!selectedTeacherCenterId && isEditingTeacher,
+    queryKey: [`/api/teacher-salary-settings/${editingUser.id}`],
+    enabled: isEditingTeacher,
   });
 
   // Populate salary settings when data loads
@@ -812,14 +743,13 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
     
     try {
       // Save teacher check-in settings first if applicable
-      if (canEditTeacherSettings && teacherCheckInCode && selectedTeacherCenterId) {
+      if (canEditTeacherSettings && teacherCheckInCode) {
         if (!/^\d{4}$/.test(teacherCheckInCode)) {
           toast({ title: "출근코드는 4자리 숫자여야 합니다", variant: "destructive" });
           return;
         }
         await saveTeacherCheckInMutation.mutateAsync({
           teacherId: editingUser.id,
-          centerId: selectedTeacherCenterId,
           checkInCode: teacherCheckInCode,
           smsRecipient1: teacherSmsRecipient1 || null,
           smsRecipient2: teacherSmsRecipient2 || null,
@@ -828,12 +758,11 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
       }
 
       // Save salary settings for regular/part-time teachers
-      if (isEditingTeacher && (formData.employmentType === "regular" || formData.employmentType === "part_time") && selectedTeacherCenterId) {
+      if (isEditingTeacher && (formData.employmentType === "regular" || formData.employmentType === "part_time")) {
         const hasSalaryData = formData.baseSalary || formData.classBasePayMiddle || formData.classBasePayHigh;
         if (hasSalaryData) {
           await saveSalarySettingsMutation.mutateAsync({
             teacherId: editingUser.id,
-            centerId: selectedTeacherCenterId,
             baseSalary: parseInt(formData.baseSalary) || 0,
             classBasePay: parseInt(formData.classBasePayMiddle) || 0,
             classBasePayMiddle: parseInt(formData.classBasePayMiddle) || 0,
@@ -857,7 +786,6 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
         school: formData.school || null,
         grade: formData.grade || null,
         role: roleValue,
-        centerIds: selectedCenterIds.length > 0 ? selectedCenterIds : undefined,
         attendancePin: formData.attendancePin || undefined,
         employmentType: isEditingTeacher ? formData.employmentType : null,
         dailyRate: isEditingTeacher && formData.employmentType === "hourly" && formData.dailyRate 
@@ -867,14 +795,6 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
     } catch (err) {
       // Error already shown by mutation onError handler
     }
-  };
-
-  const toggleCenter = (centerId: string) => {
-    setSelectedCenterIds((prev) =>
-      prev.includes(centerId)
-        ? prev.filter((id) => id !== centerId)
-        : [...prev, centerId]
-    );
   };
 
   const availableRoles = isPrincipal
@@ -1143,37 +1063,12 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
       )}
 
       {/* Teacher check-in settings for Admin/Principal editing a teacher */}
-      {canEditTeacherSettings && userCenters && userCenters.length > 0 && (
+      {canEditTeacherSettings && (
         <div className="space-y-4 border rounded-md p-4 bg-muted/30">
           <div className="flex items-center gap-2">
             <KeyRound className="h-4 w-4" />
             <Label className="font-semibold">출근 알림 설정</Label>
           </div>
-
-          {/* Center selector for teachers with multiple centers */}
-          {userCenters.length > 1 && (
-            <div className="space-y-2">
-              <Label htmlFor="edit-teacher-center">센터 선택</Label>
-              <Select
-                value={selectedTeacherCenterId}
-                onValueChange={setSelectedTeacherCenterId}
-              >
-                <SelectTrigger data-testid="select-teacher-center">
-                  <SelectValue placeholder="센터 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {userCenters.map((center) => (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                출근 설정은 센터별로 별도 관리됩니다
-              </p>
-            </div>
-          )}
           
           <div className="space-y-2">
             <Label htmlFor="edit-teacher-checkin-code">출근코드 (4자리 숫자)</Label>
@@ -1218,53 +1113,6 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
         </div>
       )}
 
-      {/* Admin can edit centers for all users; Principal/Teacher can edit centers for students only */}
-      {((isPrincipal || user?.role === UserRole.PRINCIPAL || user?.role === UserRole.TEACHER) && isStudent && centers.length > 0) && (
-        <div className="space-y-2">
-          <Label>소속 센터 (복수 선택 가능)</Label>
-          <div className="space-y-2 border rounded-md p-3">
-            {centers.map((center) => (
-              <label
-                key={center.id}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedCenterIds.includes(center.id)}
-                  onChange={() => toggleCenter(center.id)}
-                  className="h-4 w-4 rounded border-input"
-                  data-testid={`checkbox-edit-center-${center.id}`}
-                />
-                <span className="text-sm">{center.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* Admin can also edit centers for non-students */}
-      {(isPrincipal && !isStudent && centers.length > 0) && (
-        <div className="space-y-2">
-          <Label>소속 센터 (복수 선택 가능)</Label>
-          <div className="space-y-2 border rounded-md p-3">
-            {centers.map((center) => (
-              <label
-                key={center.id}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedCenterIds.includes(center.id)}
-                  onChange={() => toggleCenter(center.id)}
-                  className="h-4 w-4 rounded border-input"
-                  data-testid={`checkbox-edit-center-${center.id}`}
-                />
-                <span className="text-sm">{center.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onClose}>
           취소
@@ -1277,10 +1125,9 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
   );
 }
 
-function BulkUploadDialog({ centers, onClose }: { centers: Center[]; onClose: () => void }) {
+function BulkUploadDialog({ onClose }: { onClose: () => void }) {
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
-  const [selectedCenter, setSelectedCenter] = useState<string>(centers[0]?.id || "");
   const [result, setResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
 
   const uploadMutation = useMutation({
@@ -1313,14 +1160,9 @@ function BulkUploadDialog({ centers, onClose }: { centers: Center[]; onClose: ()
       toast({ title: "엑셀 파일을 선택해주세요", variant: "destructive" });
       return;
     }
-    if (!selectedCenter) {
-      toast({ title: "기본 센터를 선택해주세요", variant: "destructive" });
-      return;
-    }
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("centerIds", JSON.stringify([selectedCenter]));
     uploadMutation.mutate(formData);
   };
 
@@ -1396,27 +1238,6 @@ function BulkUploadDialog({ centers, onClose }: { centers: Center[]; onClose: ()
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label>기본 센터 (엑셀에 센터명이 없을 경우 적용)</Label>
-        <div className="space-y-2 border rounded-md p-3">
-          {centers.map((center) => (
-            <label key={center.id} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="defaultCenter"
-                checked={selectedCenter === center.id}
-                onChange={() => setSelectedCenter(center.id)}
-                className="h-4 w-4 border-input"
-              />
-              <span className="text-sm">{center.name}</span>
-            </label>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          엑셀 파일에 "센터명" 열이 있으면 해당 센터로 등록됩니다
-        </p>
-      </div>
-
       <p className="text-sm text-muted-foreground">
         기본 비밀번호: 1234
       </p>
@@ -1432,16 +1253,12 @@ function BulkUploadDialog({ centers, onClose }: { centers: Center[]; onClose: ()
 }
 
 function UserDetailsPanel({ userItem, onEdit, onDelete, allTeachers }: { userItem: User; onEdit: () => void; onDelete: () => void; allTeachers?: User[] }) {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
   const isTeacher = user?.role === UserRole.TEACHER;
   const isStudent = userItem.role === UserRole.STUDENT;
-
-  const { data: userCenters } = useQuery<Center[]>({
-    queryKey: ["/api/users", userItem.id, "centers"],
-  });
 
   const { data: enrolledClasses } = useQuery<any[]>({
     queryKey: ["/api/students", userItem.id, "classes"],
@@ -1449,8 +1266,8 @@ function UserDetailsPanel({ userItem, onEdit, onDelete, allTeachers }: { userIte
   });
 
   const { data: attendancePin } = useQuery<{ pin: string } | null>({
-    queryKey: [`/api/students/${userItem.id}/attendance-pin/${selectedCenter?.id}`],
-    enabled: userItem.role === UserRole.STUDENT && !!selectedCenter?.id,
+    queryKey: [`/api/students/${userItem.id}/attendance-pin`],
+    enabled: userItem.role === UserRole.STUDENT,
   });
 
   // Get homeroom teacher name
@@ -1690,27 +1507,6 @@ function UserDetailsPanel({ userItem, onEdit, onDelete, allTeachers }: { userIte
             )}
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-md bg-primary/10">
-                <Building2 className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">소속 센터</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {userCenters?.length ? (
-                    userCenters.map((center) => (
-                      <Badge key={center.id} variant="secondary">
-                        {center.name}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">-</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {userItem.role === UserRole.STUDENT && enrolledClasses && enrolledClasses.length > 0 && (
@@ -1791,7 +1587,7 @@ function UserDetailsPanel({ userItem, onEdit, onDelete, allTeachers }: { userIte
 }
 
 export default function UsersPage() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
@@ -1816,23 +1612,9 @@ export default function UsersPage() {
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
   const isTeacher = user?.role === UserRole.TEACHER;
 
-  const { data: centers } = useQuery<Center[]>({
-    queryKey: [`/api/centers`],
-    enabled: isPrincipal,
-  });
-
-  const { data: teacherCenters } = useQuery<Center[]>({
-    queryKey: [`/api/users/${user?.id}/centers`],
-    enabled: isTeacher && !!user?.id,
-  });
-
-  const usersQueryKey = selectedCenter?.id 
-    ? `/api/users?centerId=${selectedCenter.id}` 
-    : `/api/users`;
-  
   const { data: users, isLoading } = useQuery<User[]>({
-    queryKey: [usersQueryKey],
-    enabled: (!!selectedCenter?.id || isPrincipal) && !isTeacher,
+    queryKey: ["/api/users"],
+    enabled: !isTeacher,
   });
 
   const { data: teacherStudents, isLoading: loadingTeacherStudents } = useQuery<User[]>({
@@ -1840,10 +1622,8 @@ export default function UsersPage() {
     enabled: isTeacher && !!user?.id,
   });
 
-  // Get all teachers for homeroom assignment dropdown (all roles need this to display homeroom teacher name)
   const { data: allTeachers = [] } = useQuery<User[]>({
-    queryKey: [`/api/teachers?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id,
+    queryKey: ["/api/teachers"],
     select: (data) => data.filter(t => t.role === UserRole.TEACHER),
   });
 
@@ -1907,7 +1687,7 @@ export default function UsersPage() {
   };
 
   const handleStudentExit = async (reasons: string[], notes: string) => {
-    if (!studentToExit || !selectedCenter?.id || !user?.id) return;
+    if (!studentToExit || !user?.id) return;
     
     setIsExitProcessing(true);
     try {
@@ -1915,7 +1695,6 @@ export default function UsersPage() {
         reasons,
         notes,
         recordedBy: user.id,
-        centerId: selectedCenter.id,
       });
       deleteMutation.mutate(studentToExit.id);
     } catch (error: any) {
@@ -1946,7 +1725,6 @@ export default function UsersPage() {
                 <DialogDescription>엑셀 파일로 학생을 한번에 등록합니다</DialogDescription>
               </DialogHeader>
               <BulkUploadDialog
-                centers={isPrincipal ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
                 onClose={() => setIsBulkOpen(false)}
               />
             </DialogContent>
@@ -1964,7 +1742,6 @@ export default function UsersPage() {
                 <DialogDescription>{isTeacher ? "학생 정보를 입력해주세요" : "사용자 정보를 입력해주세요"}</DialogDescription>
               </DialogHeader>
               <CreateUserDialog
-                centers={isPrincipal ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
                 onClose={() => setIsCreateOpen(false)}
                 teacherOnly={isTeacher}
               />
@@ -1982,7 +1759,6 @@ export default function UsersPage() {
           {editingUser && (
             <EditUserDialog
               user={editingUser}
-              centers={isPrincipal ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
               onClose={() => setEditingUser(null)}
             />
           )}
@@ -2095,10 +1871,9 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
-      {studentToExit && selectedCenter && user && (
+      {studentToExit && user && (
         <StudentExitDialog
           student={studentToExit}
-          centerId={selectedCenter.id}
           recordedBy={user.id}
           onConfirm={handleStudentExit}
           onCancel={() => setStudentToExit(null)}

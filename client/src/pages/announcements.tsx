@@ -25,7 +25,6 @@ interface AnnouncementWithCreator extends Announcement {
 export default function AnnouncementsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedCenterId, setSelectedCenterId] = useState<string>("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showSmsDialog, setShowSmsDialog] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementWithCreator | null>(null);
@@ -36,37 +35,19 @@ export default function AnnouncementsPage() {
   const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: centers = [] } = useQuery<Center[]>({
-    queryKey: ["/api/centers"],
+  const { data: announcements = [], isLoading: announcementsLoading } = useQuery<AnnouncementWithCreator[]>({
+    queryKey: ["/api/announcements"],
     enabled: !!user,
   });
 
-  const { data: userCenters = [] } = useQuery<Center[]>({
-    queryKey: [`/api/users/${user?.id}/centers`],
-    enabled: !!user?.id,
-  });
-
-  const availableCenters = user?.role === UserRole.PRINCIPAL ? centers : userCenters;
-
-  useEffect(() => {
-    if (availableCenters.length > 0 && !selectedCenterId) {
-      setSelectedCenterId(availableCenters[0].id);
-    }
-  }, [availableCenters, selectedCenterId]);
-
-  const { data: announcements = [], isLoading: announcementsLoading } = useQuery<AnnouncementWithCreator[]>({
-    queryKey: [`/api/announcements?centerId=${selectedCenterId}`],
-    enabled: !!user && !!selectedCenterId,
-  });
-
   const { data: students = [] } = useQuery<User[]>({
-    queryKey: [`/api/announcements/targets/students?centerId=${selectedCenterId}`],
-    enabled: !!user && !!selectedCenterId,
+    queryKey: ["/api/announcements/targets/students"],
+    enabled: !!user,
   });
 
   const { data: grades = [] } = useQuery<string[]>({
-    queryKey: [`/api/announcements/targets/grades?centerId=${selectedCenterId}`],
-    enabled: !!user && !!selectedCenterId,
+    queryKey: ["/api/announcements/targets/grades"],
+    enabled: !!user,
   });
 
   const { data: classes = [] } = useQuery<ClassType[]>({
@@ -74,13 +55,12 @@ export default function AnnouncementsPage() {
     enabled: !!user,
   });
 
-  const centerClasses = classes.filter(c => c.centerId === selectedCenterId && !c.isArchived);
+  const activeClasses = classes.filter(c => !c.isArchived);
 
   const createMutation = useMutation({
     mutationFn: async (data: { title: string; content: string; targetType: string; targetIds: string[] }) => {
       return apiRequest("POST", "/api/announcements", {
         ...data,
-        centerId: selectedCenterId,
         createdById: user?.id,
       });
     },
@@ -164,7 +144,7 @@ export default function AnnouncementsPage() {
   const getTargetLabel = (announcement: AnnouncementWithCreator) => {
     if (announcement.targetType === AnnouncementTargetType.CLASS) {
       const classNames = announcement.targetIds
-        .map(id => centerClasses.find(c => c.id === id)?.name)
+        .map(id => activeClasses.find(c => c.id === id)?.name)
         .filter(Boolean)
         .join(", ");
       return `반: ${classNames || "알 수 없음"}`;
@@ -204,18 +184,6 @@ export default function AnnouncementsPage() {
           <p className="text-muted-foreground">학부모에게 공지사항을 전달하세요</p>
         </div>
         <div className="flex items-center gap-2">
-          {availableCenters.length > 1 && (
-            <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="센터 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableCenters.map(center => (
-                  <SelectItem key={center.id} value={center.id}>{center.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             공지 작성
@@ -397,7 +365,7 @@ export default function AnnouncementsPage() {
 
               {targetType === AnnouncementTargetType.CLASS && (
                 <div className="border rounded-lg max-h-48 overflow-y-auto p-2 space-y-1">
-                  {centerClasses.map(cls => (
+                  {activeClasses.map(cls => (
                     <div
                       key={cls.id}
                       className="flex items-center gap-2 p-2 hover:bg-accent rounded cursor-pointer"
@@ -467,7 +435,7 @@ export default function AnnouncementsPage() {
               <div className="bg-muted p-3 rounded-lg">
                 <p className="text-sm font-medium mb-2">발송될 메시지 미리보기:</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  [{availableCenters.find(c => c.id === selectedCenterId)?.name || "학원"}] 공지사항이 등록되었습니다.{"\n\n"}제목: {selectedAnnouncement.title}{"\n\n"}학원 앱에서 확인해주세요.
+                  [프라임수학] 공지사항이 등록되었습니다.{"\n\n"}제목: {selectedAnnouncement.title}{"\n\n"}학원 앱에서 확인해주세요.
                 </p>
               </div>
             </div>

@@ -436,7 +436,7 @@ export interface IStorage {
   deleteStudentTextbookPurchase(id: string): Promise<void>;
 
   // Announcements (공지사항)
-  getAnnouncements(centerId: string): Promise<(Announcement & { creator?: User })[]>;
+  getAnnouncements(): Promise<(Announcement & { creator?: User })[]>;
   getAnnouncement(id: string): Promise<Announcement | undefined>;
   createAnnouncement(data: InsertAnnouncement): Promise<Announcement>;
   updateAnnouncement(id: string, data: Partial<InsertAnnouncement>): Promise<Announcement>;
@@ -3193,9 +3193,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Announcements (공지사항)
-  async getAnnouncements(centerId: string): Promise<(Announcement & { creator?: User })[]> {
+  async getAnnouncements(): Promise<(Announcement & { creator?: User })[]> {
     const allAnnouncements = await db.select().from(announcements)
-      .where(eq(announcements.centerId, centerId))
       .orderBy(desc(announcements.createdAt));
     
     const result: (Announcement & { creator?: User })[] = [];

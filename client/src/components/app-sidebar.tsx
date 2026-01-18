@@ -41,7 +41,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { RoleBadge } from "@/components/role-badge";
-import { CenterSelector } from "@/components/center-selector";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole } from "@shared/schema";
 
@@ -245,25 +244,20 @@ export function AppSidebar() {
             </div>
           </div>
         ) : (
-          <>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {user.name.slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium truncate" data-testid="text-user-name">{user.name}</span>
-                  <RoleBadge role={user.role} size="sm" />
-                </div>
-                <p className="text-xs text-muted-foreground truncate">{user.username}</p>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {user.name.slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-medium truncate" data-testid="text-user-name">{user.name}</span>
+                <RoleBadge role={user.role} size="sm" />
               </div>
+              <p className="text-xs text-muted-foreground truncate">{user.username}</p>
             </div>
-            <div className="mt-3">
-              <CenterSelector />
-            </div>
-          </>
+          </div>
         )}
       </SidebarHeader>
 
@@ -277,6 +271,9 @@ export function AppSidebar() {
                 elements.push(renderMenuItem(item));
                 if (showClassManagement && index === classManagementInsertIndex - 1) {
                   elements.push(renderClassManagement());
+                }
+                if (showParentManagement && index === parentManagementInsertIndex - 1) {
+                  elements.push(renderParentManagement());
                 }
                 return elements;
               }).flat()}

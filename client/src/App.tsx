@@ -9,7 +9,6 @@ import { UserRole } from "@shared/schema";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MobileNav } from "@/components/mobile-nav";
-import { CenterSelector } from "@/components/center-selector";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
@@ -27,6 +26,7 @@ import ManualPage from "@/pages/manual";
 import TodosPage from "@/pages/todos";
 import PointsPage from "@/pages/points";
 import PointsManagementPage from "@/pages/points-management";
+import AnnouncementsPage from "@/pages/announcements";
 import { Loader2, User, Settings, LogOut, Download, Smartphone } from "lucide-react";
 import { PWAInstallProvider, usePWAInstall } from "@/lib/pwa-install";
 import { Button } from "@/components/ui/button";
@@ -74,9 +74,6 @@ function ProtectedRoutes() {
               <Link href="/" className="md:hidden">
                 <img src="/logo.png" alt="학원 로고" className="h-8 w-auto" data-testid="link-logo-home" />
               </Link>
-              <div className="md:hidden text-sm font-medium text-muted-foreground">
-                {user?.role !== undefined && user.role >= UserRole.TEACHER && <CenterSelector />}
-              </div>
             </div>
             <div className="flex items-center gap-2">
               <NotificationBell />
@@ -139,6 +136,7 @@ function ProtectedRoutes() {
               <Route path="/manual" component={ManualPage} />
               <Route path="/points" component={PointsPage} />
               <Route path="/points-management" component={PointsManagementPage} />
+              <Route path="/announcements" component={AnnouncementsPage} />
               <Route path="/settings" component={SettingsPage} />
               <Route component={NotFound} />
             </Switch>

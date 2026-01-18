@@ -140,7 +140,6 @@ export default function AttendancePadPage() {
   useWakeLock();
   const { user, logout } = useAuth();
   
-  const [selectedCenterId, setSelectedCenterId] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [checkInState, setCheckInState] = useState<CheckInState>("idle");
   const [pinValidation, setPinValidation] = useState<PinValidationResult | null>(null);
@@ -156,19 +155,6 @@ export default function AttendancePadPage() {
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
   };
-
-  const { data: centers = [] } = useQuery<Center[]>({
-    queryKey: ["/api/centers"],
-  });
-
-  useEffect(() => {
-    const savedCenterId = localStorage.getItem("attendance-pad-center");
-    if (savedCenterId) {
-      setSelectedCenterId(savedCenterId);
-    } else if (centers.length > 0) {
-      setSelectedCenterId(centers[0].id);
-    }
-  }, [centers]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -206,14 +192,14 @@ export default function AttendancePadPage() {
   };
 
   const validatePin = async () => {
-    if (!selectedCenterId || pin.length < 4 || isSubmitting) return;
+    if (pin.length < 4 || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/attendance/validate-pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ centerId: selectedCenterId, pin }),
+        body: JSON.stringify({ pin }),
         credentials: "include",
       });
 
@@ -261,14 +247,12 @@ export default function AttendancePadPage() {
   };
 
   const completeCheckOut = async () => {
-    if (!selectedCenterId) return;
-
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/attendance/check-out", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ centerId: selectedCenterId, pin }),
+        body: JSON.stringify({ pin }),
         credentials: "include",
       });
 
@@ -296,14 +280,12 @@ export default function AttendancePadPage() {
   };
 
   const completeCheckIn = async (classId: string) => {
-    if (!selectedCenterId) return;
-
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/attendance/check-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ centerId: selectedCenterId, pin, classId }),
+        body: JSON.stringify({ pin, classId }),
         credentials: "include",
       });
 
@@ -331,7 +313,7 @@ export default function AttendancePadPage() {
   };
 
   const handleTeacherPunch = async (type: "check_in" | "check_out") => {
-    if (!selectedCenterId || !pinValidation?.teacher) return;
+    if (!pinValidation?.teacher) return;
     
     setIsSubmitting(true);
     try {
@@ -340,7 +322,6 @@ export default function AttendancePadPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teacherId: pinValidation.teacher.id,
-          centerId: selectedCenterId,
           type,
         }),
         credentials: "include",
@@ -373,12 +354,6 @@ export default function AttendancePadPage() {
     await completeCheckIn(classId);
   };
 
-  const handleCenterChange = (centerId: string) => {
-    setSelectedCenterId(centerId);
-    localStorage.setItem("attendance-pad-center", centerId);
-    setShowSettings(false);
-  };
-
   useEffect(() => {
     if (pin.length === 4 && checkInState === "idle") {
       validatePin();
@@ -398,21 +373,6 @@ export default function AttendancePadPage() {
                 로그인: {user.name}
               </div>
             )}
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">센터 선택</label>
-              <Select value={selectedCenterId || ""} onValueChange={handleCenterChange}>
-                <SelectTrigger data-testid="select-center">
-                  <SelectValue placeholder="센터를 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  {centers.map((center) => (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <Button
               variant="outline"
               className="w-full"
@@ -438,8 +398,6 @@ export default function AttendancePadPage() {
       </div>
     );
   }
-
-  const selectedCenter = centers.find((c) => c.id === selectedCenterId);
 
   return (
     <div className={cn(
@@ -484,11 +442,6 @@ export default function AttendancePadPage() {
             <div className="text-sm landscape:text-lg text-muted-foreground">
               {format(currentTime, "yyyy년 M월 d일 EEEE", { locale: ko })}
             </div>
-            {selectedCenter && (
-              <div className="text-xs landscape:text-base text-muted-foreground mt-1">
-                {selectedCenter.name}
-              </div>
-            )}
           </div>
 
           <div className="landscape:flex-1 flex flex-col items-center">

@@ -49,7 +49,6 @@ export default function StudentReportsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(startOfMonth(new Date()));
-  const [selectedCenterId, setSelectedCenterId] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [editingReport, setEditingReport] = useState<ReportWithDetails | null>(null);
   const [editedContent, setEditedContent] = useState("");
@@ -64,24 +63,6 @@ export default function StudentReportsPage() {
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth() + 1;
 
-  const { data: centers = [] } = useQuery<Center[]>({
-    queryKey: ["/api/centers"],
-    enabled: !!user,
-  });
-
-  const { data: userCenters = [] } = useQuery<Center[]>({
-    queryKey: [`/api/users/${user?.id}/centers`],
-    enabled: !!user?.id,
-  });
-
-  const availableCenters = user?.role === UserRole.PRINCIPAL ? centers : userCenters;
-
-  useEffect(() => {
-    if (availableCenters.length > 0 && !selectedCenterId) {
-      setSelectedCenterId(availableCenters[0].id);
-    }
-  }, [availableCenters, selectedCenterId]);
-
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
     enabled: !!user,
@@ -93,25 +74,24 @@ export default function StudentReportsPage() {
   });
 
   const { data: enrollments = [] } = useQuery<{ id: string; classId: string; studentId: string }[]>({
-    queryKey: [`/api/enrollments?centerId=${selectedCenterId}`],
-    enabled: !!user && !!selectedCenterId,
+    queryKey: ["/api/enrollments"],
+    enabled: !!user,
   });
 
-  const centerClasses = classes.filter(c => c.centerId === selectedCenterId);
-  const centerClassIds = centerClasses.map(c => c.id);
+  const allClassIds = classes.map(c => c.id);
   const enrolledStudentIds = enrollments
-    .filter(e => centerClassIds.includes(e.classId))
+    .filter(e => allClassIds.includes(e.classId))
     .map(e => e.studentId);
   const uniqueEnrolledStudentIds = Array.from(new Set(enrolledStudentIds));
 
   const students = users.filter(u => u.role === UserRole.STUDENT);
-  const centerStudents = students.filter(s => uniqueEnrolledStudentIds.includes(s.id));
+  const enrolledStudents = students.filter(s => uniqueEnrolledStudentIds.includes(s.id));
   
   // For teachers, only show students whose homeroom teacher is themselves
   const isTeacher = user?.role === UserRole.TEACHER;
   const homeroomFilteredStudents = isTeacher 
-    ? centerStudents.filter(s => s.homeroomTeacherId === user?.id)
-    : centerStudents;
+    ? enrolledStudents.filter(s => s.homeroomTeacherId === user?.id)
+    : enrolledStudents;
   
   // Filter students by search query
   const filteredStudents = searchQuery.trim() 
@@ -122,15 +102,14 @@ export default function StudentReportsPage() {
     : homeroomFilteredStudents;
 
   const { data: reports = [], isLoading: reportsLoading, refetch: refetchReports } = useQuery<ReportWithDetails[]>({
-    queryKey: [`/api/student-reports?centerId=${selectedCenterId}&year=${year}&month=${month}`],
-    enabled: !!selectedCenterId,
+    queryKey: [`/api/student-reports?year=${year}&month=${month}`],
+    enabled: !!user,
   });
 
   const createReportMutation = useMutation({
     mutationFn: async ({ studentId, content }: { studentId: string; content: string }) => {
       const response = await apiRequest("POST", "/api/student-reports", {
         studentId,
-        centerId: selectedCenterId,
         year,
         month,
         createdById: user?.id,
@@ -312,19 +291,6 @@ export default function StudentReportsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
-            <SelectTrigger className="w-[140px]" data-testid="select-center">
-              <SelectValue placeholder="센터 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableCenters.map(center => (
-                <SelectItem key={center.id} value={center.id}>
-                  {center.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <div className="flex items-center gap-1">
             <Button
               size="icon"
@@ -372,10 +338,10 @@ export default function StudentReportsPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      ) : centerStudents.length === 0 ? (
+      ) : enrolledStudents.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">이 센터에 등록된 학생이 없습니다.</p>
+            <p className="text-muted-foreground">등록된 학생이 없습니다.</p>
           </CardContent>
         </Card>
       ) : filteredStudents.length === 0 ? (

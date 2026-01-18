@@ -102,7 +102,7 @@ function formatMonthShort(month: string): string {
 }
 
 // Salary breakdown panel component for showing detailed calculation
-function SalaryBreakdownPanel({ teacherId, yearMonth, centerId }: { teacherId: string; yearMonth: string; centerId: string }) {
+function SalaryBreakdownPanel({ teacherId, yearMonth }: { teacherId: string; yearMonth: string }) {
   type SalaryCalcType = {
     baseSalary: number;
     performanceBonus: number;
@@ -125,8 +125,8 @@ function SalaryBreakdownPanel({ teacherId, yearMonth, centerId }: { teacherId: s
   };
 
   const { data: salaryCalc, isLoading } = useQuery<SalaryCalcType>({
-    queryKey: [`/api/teacher-salary-calculation/${teacherId}/${yearMonth}?centerId=${centerId}`],
-    enabled: !!teacherId && !!yearMonth && !!centerId,
+    queryKey: [`/api/teacher-salary-calculation/${teacherId}/${yearMonth}`],
+    enabled: !!teacherId && !!yearMonth,
   });
 
   if (isLoading) {
@@ -174,7 +174,7 @@ function SalaryBreakdownPanel({ teacherId, yearMonth, centerId }: { teacherId: s
 }
 
 export default function ManagementPage() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [months] = useState(12);
   const [mainTab, setMainTab] = useState("students");
@@ -199,20 +199,17 @@ export default function ManagementPage() {
   }
 
   const { data: metricsData, isLoading, refetch } = useQuery<{ monthlyData: MonthlyData[] }>({
-    queryKey: [`/api/management/metrics?centerId=${selectedCenter?.id}&months=${months}`],
-    enabled: !!selectedCenter?.id,
+    queryKey: [`/api/management/metrics?months=${months}`],
   });
 
   const { data: studentTrends, isLoading: loadingTrends } = useQuery<StudentTrendsData>({
-    queryKey: [`/api/dashboard/student-trends?centerId=${selectedCenter?.id}&actorId=${user?.id}`],
-    enabled: !!user?.id && !!selectedCenter?.id,
+    queryKey: [`/api/dashboard/student-trends?actorId=${user?.id}`],
+    enabled: !!user?.id,
   });
 
   const updateCountMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/management/update-student-count", {
-        centerId: selectedCenter?.id,
-      });
+      return apiRequest("POST", "/api/management/update-student-count", {});
     },
     onSuccess: () => {
       invalidateQueriesStartingWith("/api/management");
@@ -224,8 +221,8 @@ export default function ManagementPage() {
   });
 
   const { data: teacherWorkRecords = [], isLoading: loadingWorkRecords } = useQuery<TeacherWorkRecord[]>({
-    queryKey: [`/api/teacher-work-records?centerId=${selectedCenter?.id}&startDate=${workStartDate}&endDate=${workEndDate}`],
-    enabled: !!selectedCenter?.id && !!workStartDate && !!workEndDate && mainTab === "teachers",
+    queryKey: [`/api/teacher-work-records?startDate=${workStartDate}&endDate=${workEndDate}`],
+    enabled: !!workStartDate && !!workEndDate && mainTab === "teachers",
   });
 
   // Extract unique teachers from work records for filtering
@@ -254,8 +251,8 @@ export default function ManagementPage() {
   });
 
   const { data: marketingComparison, isLoading: loadingMarketing } = useQuery<MarketingComparisonData>({
-    queryKey: ["/api/marketing-campaigns/comparison", selectedCenter?.id],
-    enabled: !!selectedCenter?.id && mainTab === "marketing",
+    queryKey: ["/api/marketing-campaigns/comparison"],
+    enabled: mainTab === "marketing",
   });
 
   const invalidateMarketingQueries = () => {
@@ -275,7 +272,6 @@ export default function ManagementPage() {
     mutationFn: async (data: typeof campaignForm) => {
       return apiRequest("POST", "/api/marketing-campaigns", {
         ...data,
-        centerId: selectedCenter?.id,
         createdBy: user?.id,
       });
     },
@@ -496,15 +492,14 @@ export default function ManagementPage() {
   const removeExpenseItem = (index: number) => setExpenseItems(prev => prev.filter((_, i) => i !== index));
 
   const { data: financeRecords = [], isLoading: loadingFinance } = useQuery<MonthlyFinancialRecord[]>({
-    queryKey: [`/api/monthly-financials?centerId=${selectedCenter?.id}&year=${financeYear}`],
-    enabled: !!selectedCenter?.id && mainTab === "finance",
+    queryKey: [`/api/monthly-financials?year=${financeYear}`],
+    enabled: mainTab === "finance",
   });
 
-  // Teacher list for salary expenses
   type TeacherWithEmploymentType = { id: string; name: string; employmentType: string | null; dailyRate: number | null };
   const { data: teacherList = [], isLoading: loadingTeachers } = useQuery<TeacherWithEmploymentType[]>({
-    queryKey: [`/api/users?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && showFinanceDialog,
+    queryKey: ["/api/users"],
+    enabled: showFinanceDialog,
     select: (data: any[]) => data.filter(u => u.role === 2).map(u => ({ 
       id: u.id, 
       name: u.name, 
@@ -513,11 +508,10 @@ export default function ManagementPage() {
     })),
   });
   
-  // Get work days count for hourly teachers in the selected month
   const financeDialogYearMonth = editingFinance?.yearMonth || selectedFinanceMonth;
   const { data: workDaysData = {} } = useQuery<Record<string, number>>({
-    queryKey: [`/api/teacher-work-days?centerId=${selectedCenter?.id}&yearMonth=${financeDialogYearMonth}`],
-    enabled: !!selectedCenter?.id && showFinanceDialog && !!financeDialogYearMonth,
+    queryKey: [`/api/teacher-work-days?yearMonth=${financeDialogYearMonth}`],
+    enabled: showFinanceDialog && !!financeDialogYearMonth,
   });
   
   // State for controlled teacher salary select
@@ -557,8 +551,8 @@ export default function ManagementPage() {
   };
 
   const { data: allSalarySettings = [] } = useQuery<TeacherSalarySettingsType[]>({
-    queryKey: [`/api/teacher-salary-settings?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && (mainTab === "teachers" || mainTab === "finance"),
+    queryKey: ["/api/teacher-salary-settings"],
+    enabled: mainTab === "teachers" || mainTab === "finance",
   });
 
   // Get salary calculation for selected teacher
@@ -583,8 +577,8 @@ export default function ManagementPage() {
   };
 
   const { data: salaryCalculation } = useQuery<SalaryCalculationType>({
-    queryKey: ["/api/teacher-salary-calculation", selectedTeacherForSalary, selectedFinanceMonth, selectedCenter?.id],
-    enabled: !!selectedTeacherForSalary && !!selectedCenter?.id && showSalarySettingsDialog,
+    queryKey: ["/api/teacher-salary-calculation", selectedTeacherForSalary, selectedFinanceMonth],
+    enabled: !!selectedTeacherForSalary && showSalarySettingsDialog,
   });
 
   // Salary adjustments (급여 조정 항목)
@@ -600,8 +594,8 @@ export default function ManagementPage() {
   };
 
   const { data: salaryAdjustments = [] } = useQuery<SalaryAdjustmentType[]>({
-    queryKey: [`/api/teacher-salary-adjustments?centerId=${selectedCenter?.id}&yearMonth=${selectedFinanceMonth}&teacherId=${selectedTeacherForSalary}`],
-    enabled: !!selectedTeacherForSalary && !!selectedCenter?.id && showSalarySettingsDialog,
+    queryKey: [`/api/teacher-salary-adjustments?yearMonth=${selectedFinanceMonth}&teacherId=${selectedTeacherForSalary}`],
+    enabled: !!selectedTeacherForSalary && showSalarySettingsDialog,
   });
 
   const [newAdjustmentAmount, setNewAdjustmentAmount] = useState("");
@@ -636,13 +630,12 @@ export default function ManagementPage() {
   });
 
   const handleAddAdjustment = () => {
-    if (!selectedTeacherForSalary || !selectedCenter?.id || !newAdjustmentAmount || !newAdjustmentDescription) {
+    if (!selectedTeacherForSalary || !newAdjustmentAmount || !newAdjustmentDescription) {
       toast({ title: "금액과 내용을 입력해주세요", variant: "destructive" });
       return;
     }
     createAdjustmentMutation.mutate({
       teacherId: selectedTeacherForSalary,
-      centerId: selectedCenter.id,
       yearMonth: selectedFinanceMonth,
       amount: parseInt(newAdjustmentAmount),
       description: newAdjustmentDescription,
@@ -689,10 +682,9 @@ export default function ManagementPage() {
   };
 
   const handleSaveSalarySettings = () => {
-    if (!selectedTeacherForSalary || !selectedCenter?.id) return;
+    if (!selectedTeacherForSalary) return;
     saveSalarySettingsMutation.mutate({
       teacherId: selectedTeacherForSalary,
-      centerId: selectedCenter.id,
       ...salarySettingsForm,
     });
   };
@@ -717,8 +709,8 @@ export default function ManagementPage() {
 
   // Get teacher list for salary settings (not just hourly)
   const { data: allTeachersForSalary = [] } = useQuery<TeacherWithEmploymentType[]>({
-    queryKey: [`/api/users?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && mainTab === "teachers",
+    queryKey: ["/api/users"],
+    enabled: mainTab === "teachers",
     select: (data: any[]) => data.filter(u => u.role === 2).map(u => ({ 
       id: u.id, 
       name: u.name, 
@@ -775,7 +767,7 @@ export default function ManagementPage() {
         // Try to get accurate calculation from API
         try {
           const yearMonth = editingFinance?.yearMonth || selectedFinanceMonth;
-          const response = await apiRequest("GET", `/api/teacher-salary-calculation/${teacherId}/${yearMonth}?centerId=${selectedCenter?.id}`);
+          const response = await apiRequest("GET", `/api/teacher-salary-calculation/${teacherId}/${yearMonth}`);
           const salaryData = await response.json();
           if (salaryData && salaryData.totalSalary > 0) {
             calculatedAmount = salaryData.totalSalary;
@@ -825,7 +817,6 @@ export default function ManagementPage() {
     mutationFn: async (data: Record<string, any> & { yearMonth: string }) => {
       return apiRequest("POST", "/api/monthly-financials", {
         ...data,
-        centerId: selectedCenter?.id,
         createdBy: user?.id,
       });
     },
@@ -857,8 +848,7 @@ export default function ManagementPage() {
   // Sync student tuition to finance
   const syncTuitionMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedCenter?.id) throw new Error("센터를 선택해주세요");
-      const res = await apiRequest("POST", `/api/sync-student-tuition/${selectedCenter.id}/${selectedFinanceMonth}`, {
+      const res = await apiRequest("POST", `/api/sync-student-tuition/${selectedFinanceMonth}`, {
         actorId: user?.id,
       });
       return res.json();
@@ -1629,7 +1619,6 @@ export default function ManagementPage() {
                               <SalaryBreakdownPanel 
                                 teacherId={teacher.id} 
                                 yearMonth={salaryBreakdownYearMonth}
-                                centerId={selectedCenter?.id || ""}
                               />
                             </div>
                           )}

@@ -61,7 +61,7 @@ function StatCard({
 }
 
 function StudentDashboard() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
 
   const { data: todayClasses, isLoading: loadingClasses } = useQuery<any[]>({
     queryKey: [`/api/students/${user?.id}/classes/today`],
@@ -112,9 +112,9 @@ function StudentDashboard() {
         />
         <StatCard
           icon={BookOpen}
-          title="센터"
-          value={selectedCenter?.name ?? "-"}
-          href="/settings"
+          title="수업 수"
+          value={todayClasses?.length ?? 0}
+          href="/my-timetable"
         />
       </div>
 
@@ -231,7 +231,7 @@ interface StudentTrendsData {
 }
 
 function TeacherDashboard() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const isAdminOrPrincipal = !!user && user.role >= UserRole.PRINCIPAL;
 
   const { data: stats, isLoading } = useQuery<{
@@ -240,8 +240,8 @@ function TeacherDashboard() {
     totalStudents: number;
     pendingAssessments: number;
   }>({
-    queryKey: [`/api/teachers/${user?.id}/stats?centerId=${selectedCenter?.id}`],
-    enabled: !!user?.id && !!selectedCenter?.id,
+    queryKey: [`/api/teachers/${user?.id}/stats`],
+    enabled: !!user?.id,
   });
 
   const { data: recentSubmissions } = useQuery<any[]>({
@@ -250,14 +250,14 @@ function TeacherDashboard() {
   });
 
   const { data: studentTrends, isLoading: loadingTrends } = useQuery<StudentTrendsData>({
-    queryKey: [`/api/dashboard/student-trends?centerId=${selectedCenter?.id}&actorId=${user?.id}`],
-    enabled: isAdminOrPrincipal && !!user?.id && !!selectedCenter?.id,
+    queryKey: [`/api/dashboard/student-trends?actorId=${user?.id}`],
+    enabled: isAdminOrPrincipal && !!user?.id,
   });
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const { data: allTodos = [] } = useQuery<any[]>({
-    queryKey: [`/api/todos?centerId=${selectedCenter?.id}&assigneeId=${user?.id}`],
-    enabled: !!user?.id && !!selectedCenter?.id,
+    queryKey: [`/api/todos?assigneeId=${user?.id}`],
+    enabled: !!user?.id,
   });
 
   const todayTodos = useMemo(() => {
@@ -342,7 +342,7 @@ function TeacherDashboard() {
         <h1 className="text-2xl font-bold" data-testid="text-welcome">
           {user?.role === UserRole.PRINCIPAL ? "원장님" : "선생님"}, {user?.name}님
         </h1>
-        <p className="text-muted-foreground">{today} | {selectedCenter?.name}</p>
+        <p className="text-muted-foreground">{today}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">

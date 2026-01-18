@@ -35,7 +35,7 @@ const RECURRENCE_OPTIONS = [
 ];
 
 export default function TodosPage() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -47,24 +47,24 @@ export default function TodosPage() {
   const isAdminOrPrincipal = user && user.role >= UserRole.PRINCIPAL;
 
   const { data: staff = [] } = useQuery<UserType[]>({
-    queryKey: [`/api/teachers?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && !!isAdminOrPrincipal,
+    queryKey: ["/api/teachers"],
+    enabled: !!isAdminOrPrincipal,
   });
 
   // For admin/principal: view selected teacher's todos (or all if "all" is selected), for teachers: view own todos
   const viewingUserId = isAdminOrPrincipal 
-    ? (selectedTeacherId || undefined)  // undefined = view all todos in center
+    ? (selectedTeacherId || undefined)  // undefined = view all todos
     : user?.id;
   
   const isViewingAll = isAdminOrPrincipal && !selectedTeacherId;
 
   const todoQueryUrl = viewingUserId 
-    ? `/api/todos?centerId=${selectedCenter?.id}&assigneeId=${viewingUserId}`
-    : `/api/todos?centerId=${selectedCenter?.id}`;
+    ? `/api/todos?assigneeId=${viewingUserId}`
+    : "/api/todos";
 
   const { data: allTodos = [], isLoading } = useQuery<TodoWithDetails[]>({
     queryKey: [todoQueryUrl],
-    enabled: !!selectedCenter?.id && (!!viewingUserId || !!isViewingAll),
+    enabled: !!viewingUserId || !!isViewingAll,
   });
 
   const toggleCompleteMutation = useMutation({
@@ -553,7 +553,6 @@ export default function TodosPage() {
           onClose={() => setShowCreateDialog(false)}
           initialDate={selectedDate}
           userId={user.id}
-          centerId={selectedCenter?.id || ""}
           isAdminOrPrincipal={!!isAdminOrPrincipal}
           staff={staff}
           defaultAssigneeId={selectedTeacherId}
@@ -576,13 +575,12 @@ interface CreateTodoDialogProps {
   onClose: () => void;
   initialDate: string;
   userId: string;
-  centerId: string;
   isAdminOrPrincipal: boolean;
   staff: UserType[];
   defaultAssigneeId?: string | null;
 }
 
-function CreateTodoDialog({ onClose, initialDate, userId, centerId, isAdminOrPrincipal, staff, defaultAssigneeId }: CreateTodoDialogProps) {
+function CreateTodoDialog({ onClose, initialDate, userId, isAdminOrPrincipal, staff, defaultAssigneeId }: CreateTodoDialogProps) {
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -599,7 +597,6 @@ function CreateTodoDialog({ onClose, initialDate, userId, centerId, isAdminOrPri
     mutationFn: async () => {
       return apiRequest("POST", "/api/todos", {
         creatorId: userId,
-        centerId,
         title,
         description: description || null,
         startDate: useDateRange ? startDate : null,

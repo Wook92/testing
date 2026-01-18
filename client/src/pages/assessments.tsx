@@ -676,7 +676,7 @@ function StudentAssessments() {
 }
 
 function TeacherAssessments() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [selectedClassForInput, setSelectedClassForInput] = useState<Class | null>(null);
   const [selectedTeacher, setSelectedTeacher] = useState<string>("");
@@ -732,13 +732,13 @@ function TeacherAssessments() {
   };
 
   const { data: teachers } = useQuery<User[]>({
-    queryKey: [`/api/centers/${selectedCenter?.id}/teachers`],
-    enabled: !!selectedCenter?.id && !!isPrincipal,
+    queryKey: ["/api/teachers"],
+    enabled: !!isPrincipal,
   });
 
   const { data: classes, isLoading: loadingClasses } = useQuery<Class[]>({
-    queryKey: [`/api/classes?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id,
+    queryKey: ["/api/classes"],
+    enabled: !!user,
   });
 
   // Set default teacher when data loads (for principal)
@@ -767,14 +767,14 @@ function TeacherAssessments() {
     enabled: !!selectedClassForInput?.id,
   });
 
-  const { data: centerStudents } = useQuery<User[]>({
-    queryKey: [`/api/centers/${selectedCenter?.id}/students`],
-    enabled: !!selectedCenter?.id && !!selectedClassForInput,
+  const { data: allStudents } = useQuery<User[]>({
+    queryKey: ["/api/users?role=student"],
+    enabled: !!selectedClassForInput,
   });
 
   const { data: assessments, isLoading: loadingAssessments } = useQuery<Assessment[]>({
-    queryKey: [`/api/assessments?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id,
+    queryKey: ["/api/assessments"],
+    enabled: !!user,
   });
 
   // Filter assessments by teacher and class
@@ -992,7 +992,7 @@ function TeacherAssessments() {
             <ScoreInputDialog
               classItem={selectedClassForInput}
               students={students ?? []}
-              allCenterStudents={centerStudents ?? []}
+              allCenterStudents={allStudents ?? []}
               onClose={() => setSelectedClassForInput(null)}
             />
           )}

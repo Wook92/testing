@@ -323,7 +323,7 @@ function NoteEditor({
 }
 
 export default function ClassNotesPage() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("");
@@ -336,18 +336,14 @@ export default function ClassNotesPage() {
 
   const isTeacher = user && user.role >= UserRole.TEACHER;
   const isPrincipalOrAbove = !!(user && user.role >= UserRole.PRINCIPAL);
-  const centerId = typeof selectedCenter === 'string' ? selectedCenter : selectedCenter?.id;
 
-  // Get teachers in the center for principal/admin
   const { data: teachers = [] } = useQuery<any[]>({
-    queryKey: [`/api/centers/${centerId}/teachers`],
-    enabled: !!centerId && isPrincipalOrAbove,
+    queryKey: ["/api/teachers"],
+    enabled: isPrincipalOrAbove,
   });
 
-  // Set default selected teacher for principals/admins (themselves or first teacher)
   useEffect(() => {
     if (isPrincipalOrAbove && teachers.length > 0 && !selectedTeacherId) {
-      // Default to the logged-in user if they are in the list, otherwise first teacher
       const selfInList = teachers.find((t: any) => t.id === user?.id);
       setSelectedTeacherId(selfInList ? selfInList.id : teachers[0].id);
     } else if (!isPrincipalOrAbove && user) {
@@ -355,16 +351,10 @@ export default function ClassNotesPage() {
     }
   }, [teachers, isPrincipalOrAbove, user, selectedTeacherId]);
 
-  // Get classes for the selected teacher
-  const { data: allClasses, isLoading: classesLoading } = useQuery<Class[]>({
+  const { data: classes = [], isLoading: classesLoading } = useQuery<Class[]>({
     queryKey: [`/api/teachers/${selectedTeacherId}/classes`],
     enabled: !!selectedTeacherId,
   });
-
-  const classes = allClasses?.filter((c) => {
-    if (!centerId) return false;
-    return c.centerId === centerId;
-  }) || [];
 
   // Set default selected class
   useEffect(() => {

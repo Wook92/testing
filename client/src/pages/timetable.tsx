@@ -171,7 +171,7 @@ function CreateClassDialog({
   editingClass?: Class | null;
   existingClasses?: Class[];
 }) {
-  const { selectedCenter, user } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [useDifferentTimes, setUseDifferentTimes] = useState(false);
   const isTeacherOnly = user && user.role === UserRole.TEACHER;
@@ -286,7 +286,6 @@ function CreateClassDialog({
 
     mutation.mutate({
       ...formData,
-      centerId: selectedCenter?.id,
       schedule,
     });
   };
@@ -666,15 +665,14 @@ function EditClassDialog({
   existingClasses?: Class[];
 }) {
   const { toast } = useToast();
-  const { selectedCenter, user } = useAuth();
+  const { user } = useAuth();
   const [showEditForm, setShowEditForm] = useState(false);
   const [showEnrollStudents, setShowEnrollStudents] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch all students in the class's center (not selectedCenter, which may differ)
-  const { data: centerStudents = [] } = useQuery<User[]>({
-    queryKey: [`/api/centers/${classItem.centerId}/students`],
-    enabled: !!classItem.centerId && showEnrollStudents,
+  const { data: allStudents = [] } = useQuery<User[]>({
+    queryKey: ["/api/users?role=student"],
+    enabled: showEnrollStudents,
   });
 
   // Fetch current enrollments for this class
@@ -685,7 +683,7 @@ function EditClassDialog({
 
   const enrolledStudentIds = new Set(classEnrollments.map((e) => e.studentId));
 
-  const filteredStudents = centerStudents.filter((student) =>
+  const filteredStudents = allStudents.filter((student) =>
     student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.phone?.includes(searchQuery)
   );
@@ -782,7 +780,7 @@ function EditClassDialog({
             <ScrollArea className="h-32 border rounded-md p-2">
               <div className="space-y-1">
                 {classEnrollments.map((enrollment) => {
-                  const student = centerStudents.find((s) => s.id === enrollment.studentId);
+                  const student = allStudents.find((s: User) => s.id === enrollment.studentId);
                   return (
                     <div key={enrollment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
                       <span className="text-sm">{student?.name || "알 수 없음"}</span>
@@ -1135,7 +1133,7 @@ function ClassPlansTab() {
 }
 
 export default function TimetablePage() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const [selectedTeacher, setSelectedTeacher] = useState<string>("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassWithTeacher | null>(null);
@@ -1147,14 +1145,13 @@ export default function TimetablePage() {
   const isStudent = user && user.role === UserRole.STUDENT;
 
   const { data: classes, isLoading: loadingClasses } = useQuery<Class[]>({
-    queryKey: [`/api/classes?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id,
+    queryKey: ["/api/classes"],
+    enabled: !!user,
   });
 
-  // Fetch teachers for everyone (for displaying teacher names in timetable)
   const { data: teachers } = useQuery<User[]>({
-    queryKey: [`/api/centers/${selectedCenter?.id}/teachers`],
-    enabled: !!selectedCenter?.id,
+    queryKey: ["/api/teachers"],
+    enabled: !!user,
   });
 
   const teacherMap = new Map(teachers?.map((t) => [t.id, t]) ?? []);
@@ -1258,7 +1255,7 @@ export default function TimetablePage() {
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">수업 관리</h1>
           <p className="text-muted-foreground">
-            {selectedCenter?.name} 시간표 및 수업 계획
+            시간표 및 수업 계획
           </p>
         </div>
         {isTeacherOrAbove && mainTab === "timetable" && (

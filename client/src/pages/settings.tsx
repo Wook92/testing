@@ -14,7 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { UserRole } from "@shared/schema";
 
 export default function SettingsPage() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -39,8 +39,8 @@ export default function SettingsPage() {
     messageTemplate: string | null;
     isActive: boolean;
   } | null>({
-    queryKey: [`/api/teacher-check-in-settings?teacherId=${user?.id}&centerId=${selectedCenter?.id}`],
-    enabled: !!user?.id && !!selectedCenter?.id && isTeacherOrHigher,
+    queryKey: [`/api/teacher-check-in-settings?teacherId=${user?.id}`],
+    enabled: !!user?.id && isTeacherOrHigher,
   });
 
   // Populate form with existing settings when data loads
@@ -100,7 +100,6 @@ export default function SettingsPage() {
     }
     saveCheckInSettingsMutation.mutate({
       teacherId: user?.id,
-      centerId: selectedCenter?.id,
       checkInCode,
       smsRecipient1: smsRecipient1 || null,
       smsRecipient2: smsRecipient2 || null,

@@ -1635,7 +1635,6 @@ export type AnnouncementTargetTypeValue = typeof AnnouncementTargetType[keyof ty
 
 export const announcements = pgTable("announcements", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
   createdById: varchar("created_by_id").notNull(),
   
   title: text("title").notNull(),
@@ -1655,7 +1654,6 @@ export const announcements = pgTable("announcements", {
 });
 
 export const insertAnnouncementSchema = createInsertSchema(announcements).pick({
-  centerId: true,
   createdById: true,
   title: true,
   content: true,

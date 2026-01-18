@@ -764,7 +764,7 @@ function ReviewHomeworkDialog({ submission, onClose }: {
 }
 
 export default function HomeworkPage() {
-  const { user, selectedCenter } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingHomework, setEditingHomework] = useState<Homework | null>(null);
@@ -784,16 +784,15 @@ export default function HomeworkPage() {
   const isStudent = user && user.role === UserRole.STUDENT;
 
   const { data: teachers } = useQuery<any[]>({
-    queryKey: [`/api/centers/${selectedCenter?.id}/teachers`],
-    enabled: !!selectedCenter?.id && !!isAdminOrPrincipal,
+    queryKey: ["/api/teachers"],
+    enabled: !!isAdminOrPrincipal,
   });
 
   const { data: classes } = useQuery<Class[]>({
-    queryKey: [`/api/classes?centerId=${selectedCenter?.id}`],
-    enabled: !!selectedCenter?.id && !!isTeacherOrAbove,
+    queryKey: ["/api/classes"],
+    enabled: !!isTeacherOrAbove,
   });
 
-  // Fetch enrolled classes for students
   const { data: studentEnrollments } = useQuery<any[]>({
     queryKey: [`/api/students/${user?.id}/enrollments`],
     enabled: !!user?.id && !!isStudent,
@@ -805,16 +804,16 @@ export default function HomeworkPage() {
 
   const { data: homework, isLoading: loadingHomework } = useQuery<Homework[]>({
     queryKey: isTeacherOrAbove 
-      ? [`/api/homework?centerId=${selectedCenter?.id}`]
+      ? ["/api/homework"]
       : [`/api/students/${user?.id}/homework`],
-    enabled: isTeacherOrAbove ? !!selectedCenter?.id : !!user?.id,
+    enabled: isTeacherOrAbove ? !!user : !!user?.id,
   });
 
   const { data: submissions } = useQuery<HomeworkSubmission[]>({
     queryKey: isTeacherOrAbove
-      ? [`/api/homework/submissions?centerId=${selectedCenter?.id}`]
+      ? ["/api/homework/submissions"]
       : [`/api/students/${user?.id}/homework/submissions`],
-    enabled: isTeacherOrAbove ? !!selectedCenter?.id : !!user?.id,
+    enabled: isTeacherOrAbove ? !!user : !!user?.id,
   });
 
   const { data: unsubmittedStudents } = useQuery<any[]>({

@@ -5615,11 +5615,7 @@ export async function registerRoutes(
   
   app.get("/api/announcements", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      const list = await storage.getAnnouncements(centerId);
+      const list = await storage.getAnnouncements();
       res.json(list);
     } catch (error) {
       res.status(500).json({ error: "Failed to get announcements" });
@@ -5640,9 +5636,9 @@ export async function registerRoutes(
 
   app.post("/api/announcements", async (req, res) => {
     try {
-      const { createdById, centerId, title, content, targetType, targetIds } = req.body;
+      const { createdById, title, content, targetType, targetIds } = req.body;
       
-      if (!createdById || !centerId || !title || !content || !targetType || !targetIds) {
+      if (!createdById || !title || !content || !targetType || !targetIds) {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
@@ -5652,7 +5648,6 @@ export async function registerRoutes(
       }
 
       const announcement = await storage.createAnnouncement({
-        centerId,
         createdById,
         title,
         content,
@@ -5724,12 +5719,8 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Announcement not found" });
       }
 
-      const center = await storage.getCenter(announcement.centerId);
-      if (!center) {
-        return res.status(404).json({ error: "Center not found" });
-      }
-
-      const configured = await isSolapiConfigured(center.name);
+      // Check if SOLAPI is configured system-wide
+      const configured = await isSolapiConfigured();
       if (!configured) {
         return res.status(400).json({ error: "SMS 설정이 되어있지 않습니다" });
       }
@@ -5744,8 +5735,8 @@ export async function registerRoutes(
           students.push(...classStudents);
         }
       } else if (announcement.targetType === "grade") {
-        // Get students by grade
-        const allUsers = await storage.getUsers(announcement.centerId);
+        // Get students by grade - fetch all students system-wide
+        const allUsers = await storage.getUsers();
         students = allUsers.filter(u => 
           u.role === UserRole.STUDENT && 
           announcement.targetIds.includes(u.grade || "")
@@ -5764,7 +5755,7 @@ export async function registerRoutes(
       const uniqueStudents = Array.from(new Map(students.map(s => [s.id, s])).values());
 
       // Build SMS message
-      const message = `[${center.name}] 공지사항이 등록되었습니다.\n\n제목: ${announcement.title}\n\n학원 앱에서 확인해주세요.`;
+      const message = `[학원] 공지사항이 등록되었습니다.\n\n제목: ${announcement.title}\n\n학원 앱에서 확인해주세요.`;
 
       const results: { phone: string; studentName: string; success: boolean; error?: string }[] = [];
 
@@ -5776,7 +5767,6 @@ export async function registerRoutes(
             const smsResult = await sendSms({
               to: phone,
               text: message,
-              centerName: center.name,
             });
             results.push({ 
               phone, 
@@ -5812,15 +5802,10 @@ export async function registerRoutes(
     }
   });
 
-  // Get students for announcement targeting
+  // Get students for announcement targeting (system-wide)
   app.get("/api/announcements/targets/students", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-
-      const allUsers = await storage.getUsers(centerId);
+      const allUsers = await storage.getUsers();
       const students = allUsers.filter(u => u.role === UserRole.STUDENT);
       res.json(students);
     } catch (error) {
@@ -5828,15 +5813,10 @@ export async function registerRoutes(
     }
   });
 
-  // Get grades for announcement targeting
+  // Get grades for announcement targeting (system-wide)
   app.get("/api/announcements/targets/grades", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-
-      const allUsers = await storage.getUsers(centerId);
+      const allUsers = await storage.getUsers();
       const students = allUsers.filter(u => u.role === UserRole.STUDENT);
       const grades = [...new Set(students.map(s => s.grade).filter(Boolean))].sort();
       res.json(grades);
