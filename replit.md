@@ -40,10 +40,9 @@ Preferred communication style: Simple, everyday language.
   - Parent Lv0: Read-only access
   - Student Lv1: Homework, assessments, points
   - Teacher Lv2: Class management, attendance, class notes, homework
-  - Principal Lv3: Full system access (all teacher features + center management, user management, points management)
+  - Principal Lv3: Full system access (all teacher features + user management, points management)
 - **Kiosk Account**: Special account type for dedicated attendance pad devices. Created by Principal, automatically redirects to `/attendance-pad` on login with simplified UI and logout via settings.
-- **Multi-Center Support**: Users can belong to multiple centers (N:M relationship)
-- **Initial Centers**: DMC센터 and 목동센터 with sample data
+- **Single Academy Mode**: System operates as a single academy without center/branch filtering
 
 ### Key Features & Implementations
 - **User Management**: Multi-role accounts, password reset for Principal, homeroom teacher assignment.
@@ -76,8 +75,10 @@ Preferred communication style: Simple, everyday language.
 - `/settings` - User preferences
 - `/attendance-pad` - Student attendance kiosk
 - `/student-reports` - Monthly student reports (manual creation with SMS to parents)
+- `/announcements` - Parent announcements with SMS notification
 - `/points` - Student points view
 - `/points-management` - Points management (teacher/principal)
+- `/management` - System management (Principal only)
 - `/manual` - User manual and documentation
 
 ### Manual Documentation
@@ -170,6 +171,12 @@ After deployment, the server will automatically create required tables on first 
 
 ## Recent Changes (January 2026)
 
+### Center Functionality Removal
+- Removed all center/branch filtering system-wide
+- System now operates as a single academy mode
+- All API routes updated to work without centerId parameters
+- UI removed center selector from all pages
+
 ### Role System Simplification
 - Removed ADMIN and CLINIC_TEACHER roles
 - PRINCIPAL now has all administrative permissions (previously ADMIN)
@@ -179,8 +186,14 @@ After deployment, the server will automatically create required tables on first 
 - **Points System**: Student reward points with manual add/use by teachers and view by students
 - **Class Planning**: Weekly and monthly class planning per class
 - **Student Reports**: Monthly reports with SMS sending (AI generation removed, now manual)
+- **Announcements (공지사항)**: Parent management system with:
+  - Create/edit/delete announcements for parents
+  - Target by class, grade, or specific students
+  - SMS notification to parents via SOLAPI
+  - Collapsible "학부모 관리" menu in sidebar with sub-items
 
 ### Features Removed
 - Photo upload in homework management (simplified)
 - AI generation in monthly reports (replaced with manual writing)
 - Tabs removed from sidebar: 경영, 센터관리, 스터디카페, 교재영상, 교육비, 클리닉, 수업영상
+- Center selector and center filtering across all pages
