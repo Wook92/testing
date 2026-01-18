@@ -18,7 +18,6 @@ import {
   Plus, Flame, AlertCircle, Circle, ChevronLeft, ChevronRight, 
   Check, Trash2, Calendar, ListTodo, Repeat, User as UserIcon, AlertTriangle, CircleDot, Edit2
 } from "lucide-react";
-import { UserRole } from "@shared/schema";
 import type { TodoWithDetails, User as UserType } from "@shared/schema";
 
 const PRIORITY_CONFIG = {
@@ -44,7 +43,7 @@ export default function TodosPage() {
   const [editingTodo, setEditingTodo] = useState<TodoWithDetails | null>(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
 
-  const isAdminOrPrincipal = user && user.role >= UserRole.PRINCIPAL;
+  const isAdminOrPrincipal = user && (user.role === 4 || user.role === 3);
 
   const { data: staff = [] } = useQuery<UserType[]>({
     queryKey: [`/api/teachers?centerId=${selectedCenter?.id}`],

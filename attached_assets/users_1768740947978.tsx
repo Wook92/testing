@@ -160,10 +160,11 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
   const [teacherSmsRecipient1, setTeacherSmsRecipient1] = useState("");
   const [teacherSmsRecipient2, setTeacherSmsRecipient2] = useState("");
 
+  const isAdmin = user?.role === UserRole.ADMIN;
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
-  const isTeacherRole = formData.role === "2";
+  const isTeacherRole = formData.role === "2" || formData.role === "2c";
   // Show teacher check-in settings for admin/principal when creating any teacher (including teacherOnly mode)
-  const canSetTeacherCheckIn = isPrincipal && isTeacherRole;
+  const canSetTeacherCheckIn = (isAdmin || isPrincipal) && isTeacherRole;
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -198,7 +199,8 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
       toast({ title: "출근코드는 4자리 숫자여야 합니다", variant: "destructive" });
       return;
     }
-    const roleValue = parseInt(formData.role);
+    const isClinicTeacher = formData.role === "2c";
+    const roleValue = isClinicTeacher ? 2 : parseInt(formData.role);
 
     // Build teacher check-in settings array (one per selected center)
     let teacherCheckInSettings: { centerId: string; checkInCode: string; smsRecipient1: string | null; smsRecipient2: string | null }[] | undefined;
@@ -259,6 +261,7 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
       school: formData.school || null,
       grade: formData.grade || null,
       role: roleValue,
+      isClinicTeacher,
       centerIds: formData.centerIds,
       attendancePin: formData.attendancePin || null,
       teacherCheckInSettings,
@@ -279,17 +282,19 @@ function CreateUserDialog({ centers, onClose, teacherOnly = false }: { centers: 
     }));
   };
 
-  const availableRoles = isPrincipal
+  const availableRoles = isAdmin
     ? [
         { value: "1", label: "학생" },
         { value: "2", label: "선생님" },
+        { value: "2c", label: "클리닉 선생님" },
         { value: "3", label: "원장" },
-        { value: "0", label: "학부모" },
+        { value: "4", label: "관리자" },
         { value: "-1", label: "키오스크" },
       ]
     : [
         { value: "1", label: "학생" },
         { value: "2", label: "선생님" },
+        { value: "2c", label: "클리닉 선생님" },
       ];
 
   const showStudentFields = teacherOnly || formData.role === "1";
@@ -659,7 +664,7 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
     fatherPhone: editingUser.fatherPhone || "",
     school: editingUser.school || "",
     grade: editingUser.grade || "",
-    role: String(editingUser.role),
+    role: editingUser.isClinicTeacher ? "2c" : String(editingUser.role),
     attendancePin: "",
     employmentType: editingUser.employmentType || "regular",
     dailyRate: editingUser.dailyRate ? String(editingUser.dailyRate) : "",
@@ -679,10 +684,11 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
   const [teacherSmsRecipient2, setTeacherSmsRecipient2] = useState("");
   const [selectedTeacherCenterId, setSelectedTeacherCenterId] = useState<string>("");
 
+  const isAdmin = user?.role === UserRole.ADMIN;
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
   const isStudent = editingUser.role === UserRole.STUDENT;
-  const isEditingTeacher = editingUser.role === UserRole.TEACHER;
-  const canEditTeacherSettings = (isPrincipal || isPrincipal) && isEditingTeacher;
+  const isEditingTeacher = editingUser.role === UserRole.TEACHER || editingUser.role === UserRole.CLINIC_TEACHER;
+  const canEditTeacherSettings = (isAdmin || isPrincipal) && isEditingTeacher;
 
   const { data: userCenters } = useQuery<Center[]>({
     queryKey: ["/api/users", editingUser.id, "centers"],
@@ -808,7 +814,8 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const roleValue = parseInt(formData.role);
+    const isClinicTeacher = formData.role === "2c";
+    const roleValue = isClinicTeacher ? 2 : parseInt(formData.role);
     
     try {
       // Save teacher check-in settings first if applicable
@@ -857,6 +864,7 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
         school: formData.school || null,
         grade: formData.grade || null,
         role: roleValue,
+        isClinicTeacher,
         centerIds: selectedCenterIds.length > 0 ? selectedCenterIds : undefined,
         attendancePin: formData.attendancePin || undefined,
         employmentType: isEditingTeacher ? formData.employmentType : null,
@@ -877,17 +885,19 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
     );
   };
 
-  const availableRoles = isPrincipal
+  const availableRoles = isAdmin
     ? [
         { value: "1", label: "학생" },
         { value: "2", label: "선생님" },
+        { value: "2c", label: "클리닉 선생님" },
         { value: "3", label: "원장" },
-        { value: "0", label: "학부모" },
+        { value: "4", label: "관리자" },
         { value: "-1", label: "키오스크" },
       ]
     : [
         { value: "1", label: "학생" },
         { value: "2", label: "선생님" },
+        { value: "2c", label: "클리닉 선생님" },
       ];
 
   return (
@@ -935,7 +945,7 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
       </div>
 
       {/* Employment type for teachers */}
-      {(isEditingTeacher || formData.role === "2") && (
+      {(isEditingTeacher || formData.role === "2" || formData.role === "2c") && (
         <div className="space-y-2">
           <Label>고용 형태</Label>
           <Select
@@ -955,7 +965,7 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
       )}
 
       {/* Daily rate input for hourly teachers */}
-      {(isEditingTeacher || formData.role === "2") && formData.employmentType === "hourly" && (
+      {(isEditingTeacher || formData.role === "2" || formData.role === "2c") && formData.employmentType === "hourly" && (
         <div className="space-y-2">
           <Label htmlFor="edit-dailyRate">일급 (원)</Label>
           <Input
@@ -971,7 +981,7 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
       )}
 
       {/* Salary settings for regular/part-time teachers in edit mode */}
-      {(isEditingTeacher || formData.role === "2") && (formData.employmentType === "regular" || formData.employmentType === "part_time") && (
+      {(isEditingTeacher || formData.role === "2" || formData.role === "2c") && (formData.employmentType === "regular" || formData.employmentType === "part_time") && (
         <div className="space-y-4 border rounded-md p-4 bg-muted/30">
           <div className="flex items-center gap-2">
             <Label className="font-semibold">급여 설정</Label>
@@ -1219,7 +1229,7 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
       )}
 
       {/* Admin can edit centers for all users; Principal/Teacher can edit centers for students only */}
-      {((isPrincipal || user?.role === UserRole.PRINCIPAL || user?.role === UserRole.TEACHER) && isStudent && centers.length > 0) && (
+      {((isAdmin || user?.role === UserRole.PRINCIPAL || user?.role === UserRole.TEACHER) && isStudent && centers.length > 0) && (
         <div className="space-y-2">
           <Label>소속 센터 (복수 선택 가능)</Label>
           <div className="space-y-2 border rounded-md p-3">
@@ -1242,7 +1252,7 @@ function EditUserDialog({ user: editingUser, centers, onClose }: { user: User; c
         </div>
       )}
       {/* Admin can also edit centers for non-students */}
-      {(isPrincipal && !isStudent && centers.length > 0) && (
+      {(isAdmin && !isStudent && centers.length > 0) && (
         <div className="space-y-2">
           <Label>소속 센터 (복수 선택 가능)</Label>
           <div className="space-y-2 border rounded-md p-3">
@@ -1435,6 +1445,7 @@ function UserDetailsPanel({ userItem, onEdit, onDelete, allTeachers }: { userIte
   const { user, selectedCenter } = useAuth();
   const { toast } = useToast();
 
+  const isAdmin = user?.role === UserRole.ADMIN;
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
   const isTeacher = user?.role === UserRole.TEACHER;
   const isStudent = userItem.role === UserRole.STUDENT;
@@ -1554,7 +1565,7 @@ function UserDetailsPanel({ userItem, onEdit, onDelete, allTeachers }: { userIte
     }
   };
 
-  const canDeleteEnrollment = isPrincipal || isPrincipal || isTeacher;
+  const canDeleteEnrollment = isAdmin || isPrincipal || isTeacher;
 
   return (
     <div className="mt-2 overflow-hidden rounded-lg border bg-gradient-to-br from-background to-muted/30">
@@ -1637,7 +1648,7 @@ function UserDetailsPanel({ userItem, onEdit, onDelete, allTeachers }: { userIte
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground">담임 선생님</p>
-                  {(isPrincipal || isPrincipal) && allTeachers && allTeachers.length > 0 ? (
+                  {(isAdmin || isPrincipal) && allTeachers && allTeachers.length > 0 ? (
                     <Select
                       value={userItem.homeroomTeacherId || "none"}
                       onValueChange={(value) => assignHomeroomMutation.mutate(value === "none" ? null : value)}
@@ -1761,7 +1772,7 @@ function UserDetailsPanel({ userItem, onEdit, onDelete, allTeachers }: { userIte
               <Pencil className="h-4 w-4 mr-1" />
               수정
             </Button>
-            {(isPrincipal || isPrincipal) && (
+            {(isAdmin || isPrincipal) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -1813,12 +1824,13 @@ export default function UsersPage() {
     return gradeMap[grade] ?? 999;
   };
 
+  const isAdmin = user?.role === UserRole.ADMIN;
   const isPrincipal = user?.role === UserRole.PRINCIPAL;
   const isTeacher = user?.role === UserRole.TEACHER;
 
   const { data: centers } = useQuery<Center[]>({
     queryKey: [`/api/centers`],
-    enabled: isPrincipal,
+    enabled: isAdmin,
   });
 
   const { data: teacherCenters } = useQuery<Center[]>({
@@ -1832,7 +1844,7 @@ export default function UsersPage() {
   
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: [usersQueryKey],
-    enabled: (!!selectedCenter?.id || isPrincipal) && !isTeacher,
+    enabled: (!!selectedCenter?.id || isAdmin) && !isTeacher,
   });
 
   const { data: teacherStudents, isLoading: loadingTeacherStudents } = useQuery<User[]>({
@@ -1946,7 +1958,7 @@ export default function UsersPage() {
                 <DialogDescription>엑셀 파일로 학생을 한번에 등록합니다</DialogDescription>
               </DialogHeader>
               <BulkUploadDialog
-                centers={isPrincipal ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
+                centers={isAdmin ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
                 onClose={() => setIsBulkOpen(false)}
               />
             </DialogContent>
@@ -1964,7 +1976,7 @@ export default function UsersPage() {
                 <DialogDescription>{isTeacher ? "학생 정보를 입력해주세요" : "사용자 정보를 입력해주세요"}</DialogDescription>
               </DialogHeader>
               <CreateUserDialog
-                centers={isPrincipal ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
+                centers={isAdmin ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
                 onClose={() => setIsCreateOpen(false)}
                 teacherOnly={isTeacher}
               />
@@ -1982,7 +1994,7 @@ export default function UsersPage() {
           {editingUser && (
             <EditUserDialog
               user={editingUser}
-              centers={isPrincipal ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
+              centers={isAdmin ? (centers ?? []) : isTeacher ? (teacherCenters ?? []) : [selectedCenter!].filter(Boolean)}
               onClose={() => setEditingUser(null)}
             />
           )}
@@ -2006,7 +2018,7 @@ export default function UsersPage() {
               <TabsTrigger value="all">전체</TabsTrigger>
               <TabsTrigger value="1">학생</TabsTrigger>
               <TabsTrigger value="2">선생님</TabsTrigger>
-              {isPrincipal && <TabsTrigger value="3">원장</TabsTrigger>}
+              {isAdmin && <TabsTrigger value="3">원장</TabsTrigger>}
             </TabsList>
           </Tabs>
         )}
@@ -2056,7 +2068,8 @@ export default function UsersPage() {
                     >
                       <Avatar className="h-11 w-11">
                         <AvatarFallback className={`text-sm font-medium ${
-                          userItem.role >= 3 ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200" :
+                          userItem.role === 4 ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200" :
+                          userItem.role === 3 ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200" :
                           userItem.role === 2 ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200" :
                           userItem.role === 1 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200" :
                           "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200"
@@ -2067,7 +2080,7 @@ export default function UsersPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold">{userItem.name}</span>
-                          <RoleBadge role={userItem.role} size="sm" />
+                          <RoleBadge role={userItem.role} isClinicTeacher={userItem.isClinicTeacher} size="sm" />
                         </div>
                         <p className="text-sm text-muted-foreground">{userItem.phone || userItem.username}</p>
                       </div>

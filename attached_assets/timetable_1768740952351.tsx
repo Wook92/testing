@@ -134,7 +134,7 @@ function TimetableGrid({ classes, onClassClick, isStudent = false, teacherMap }:
                         <p className="text-[7px] md:text-[10px] opacity-70 hidden md:block">
                           {startTime}-{endTime}
                         </p>
-                        {cls.teacherId && teacherMap?.get(cls.teacherId) && (
+                        {teacherMap?.get(cls.teacherId) && (
                           <p className="text-[7px] md:text-[10px] opacity-70 truncate hidden md:block">
                             {teacherMap.get(cls.teacherId)?.name}
                           </p>
@@ -955,7 +955,7 @@ export default function TimetablePage() {
   const handleClassClick = (cls: Class) => {
     const classWithTeacher: ClassWithTeacher = {
       ...cls,
-      teacher: cls.teacherId ? teacherMap.get(cls.teacherId) : undefined,
+      teacher: teacherMap.get(cls.teacherId),
     };
     setSelectedClass(classWithTeacher);
   };
