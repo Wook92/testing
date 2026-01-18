@@ -680,23 +680,27 @@ function StudentAssessments() {
                                 return (
                                   <div key={assessment.id} className="p-3 rounded-md bg-muted/30">
                                     <div className="flex items-center justify-between mb-2">
-                                      <div className="flex flex-col">
-                                        <span className="text-sm text-muted-foreground">
-                                          {format(new Date(assessment.assessmentDate), "M월 d일", { locale: ko })}
-                                        </span>
-                                        {assessment.name && (
-                                          <span className="text-sm font-medium">{assessment.name}</span>
-                                        )}
+                                      <div className="flex flex-col gap-0.5">
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="text-xs">
+                                            {format(new Date(assessment.assessmentDate), "M월 d일 (EEE)", { locale: ko })}
+                                          </Badge>
+                                          {assessment.name && (
+                                            <span className="text-sm font-semibold">{assessment.name}</span>
+                                          )}
+                                        </div>
                                         {assessment.scope && (
-                                          <span className="text-xs text-muted-foreground">범위: {assessment.scope}</span>
+                                          <span className="text-xs text-muted-foreground">
+                                            시험범위: {assessment.scope}
+                                          </span>
                                         )}
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        <Badge variant={assessment.score >= assessment.average ? "default" : "secondary"}>
+                                        <Badge variant={assessment.score >= assessment.average ? "default" : "secondary"} className="text-base px-3 py-1">
                                           {assessment.score}점
                                         </Badge>
                                         <div className={cn("flex items-center gap-1", trend.className)}>
-                                          <TrendIcon className="h-3 w-3" />
+                                          <TrendIcon className="h-4 w-4" />
                                         </div>
                                       </div>
                                     </div>
