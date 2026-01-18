@@ -116,9 +116,11 @@ import {
   studentPoints,
   pointTransactions,
   classPlans,
+  announcements,
   type StudentPoints, type InsertStudentPoints,
   type PointTransaction, type InsertPointTransaction,
   type ClassPlan, type InsertClassPlan,
+  type Announcement, type InsertAnnouncement,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, inArray, lt, desc, gte, lte, isNull } from "drizzle-orm";
@@ -432,6 +434,13 @@ export interface IStorage {
   createStudentTextbookPurchase(data: InsertStudentTextbookPurchase): Promise<StudentTextbookPurchase>;
   updateStudentTextbookPurchase(id: string, data: Partial<InsertStudentTextbookPurchase>): Promise<StudentTextbookPurchase>;
   deleteStudentTextbookPurchase(id: string): Promise<void>;
+
+  // Announcements (공지사항)
+  getAnnouncements(centerId: string): Promise<(Announcement & { creator?: User })[]>;
+  getAnnouncement(id: string): Promise<Announcement | undefined>;
+  createAnnouncement(data: InsertAnnouncement): Promise<Announcement>;
+  updateAnnouncement(id: string, data: Partial<InsertAnnouncement>): Promise<Announcement>;
+  deleteAnnouncement(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3181,6 +3190,42 @@ export class DatabaseStorage implements IStorage {
       }).returning();
       return result[0];
     }
+  }
+
+  // Announcements (공지사항)
+  async getAnnouncements(centerId: string): Promise<(Announcement & { creator?: User })[]> {
+    const allAnnouncements = await db.select().from(announcements)
+      .where(eq(announcements.centerId, centerId))
+      .orderBy(desc(announcements.createdAt));
+    
+    const result: (Announcement & { creator?: User })[] = [];
+    for (const announcement of allAnnouncements) {
+      const creator = await this.getUser(announcement.createdById);
+      result.push({ ...announcement, creator });
+    }
+    return result;
+  }
+
+  async getAnnouncement(id: string): Promise<Announcement | undefined> {
+    const result = await db.select().from(announcements).where(eq(announcements.id, id));
+    return result[0];
+  }
+
+  async createAnnouncement(data: InsertAnnouncement): Promise<Announcement> {
+    const result = await db.insert(announcements).values(data).returning();
+    return result[0];
+  }
+
+  async updateAnnouncement(id: string, data: Partial<InsertAnnouncement>): Promise<Announcement> {
+    const result = await db.update(announcements)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(announcements.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAnnouncement(id: string): Promise<void> {
+    await db.delete(announcements).where(eq(announcements.id, id));
   }
 }
 

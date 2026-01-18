@@ -34,7 +34,7 @@ export default function PointsManagementPage() {
       return apiRequest("POST", `/api/points/add?actorId=${user?.id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/students/with-points"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/students/with-points?actorId=${user?.id}`] });
       toast({ title: "포인트 지급 완료", description: "포인트가 성공적으로 지급되었습니다." });
       setIsAddDialogOpen(false);
       setSelectedStudent(null);
@@ -51,7 +51,7 @@ export default function PointsManagementPage() {
       return apiRequest("POST", `/api/points/use?actorId=${user?.id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/students/with-points"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/students/with-points?actorId=${user?.id}`] });
       toast({ title: "포인트 사용 완료", description: "포인트가 성공적으로 차감되었습니다." });
       setIsUseDialogOpen(false);
       setSelectedStudent(null);

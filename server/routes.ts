@@ -5611,6 +5611,240 @@ export async function registerRoutes(
     }
   });
 
+  // Announcement APIs (공지사항)
+  
+  app.get("/api/announcements", async (req, res) => {
+    try {
+      const centerId = req.query.centerId as string;
+      if (!centerId) {
+        return res.status(400).json({ error: "centerId is required" });
+      }
+      const list = await storage.getAnnouncements(centerId);
+      res.json(list);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get announcements" });
+    }
+  });
+
+  app.get("/api/announcements/:id", async (req, res) => {
+    try {
+      const announcement = await storage.getAnnouncement(req.params.id);
+      if (!announcement) {
+        return res.status(404).json({ error: "Announcement not found" });
+      }
+      res.json(announcement);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get announcement" });
+    }
+  });
+
+  app.post("/api/announcements", async (req, res) => {
+    try {
+      const { createdById, centerId, title, content, targetType, targetIds } = req.body;
+      
+      if (!createdById || !centerId || !title || !content || !targetType || !targetIds) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const creator = await storage.getUser(createdById);
+      if (!creator || creator.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 공지사항을 생성할 수 있습니다" });
+      }
+
+      const announcement = await storage.createAnnouncement({
+        centerId,
+        createdById,
+        title,
+        content,
+        targetType,
+        targetIds,
+      });
+      res.json(announcement);
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      res.status(500).json({ error: "Failed to create announcement" });
+    }
+  });
+
+  app.patch("/api/announcements/:id", async (req, res) => {
+    try {
+      const { actorId, ...data } = req.body;
+      
+      if (!actorId) {
+        return res.status(400).json({ error: "actorId is required" });
+      }
+
+      const actor = await storage.getUser(actorId);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 공지사항을 수정할 수 있습니다" });
+      }
+
+      const announcement = await storage.updateAnnouncement(req.params.id, data);
+      res.json(announcement);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update announcement" });
+    }
+  });
+
+  app.delete("/api/announcements/:id", async (req, res) => {
+    try {
+      const { actorId } = req.query;
+      if (!actorId) {
+        return res.status(400).json({ error: "actorId is required" });
+      }
+
+      const actor = await storage.getUser(actorId as string);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 공지사항을 삭제할 수 있습니다" });
+      }
+
+      await storage.deleteAnnouncement(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete announcement" });
+    }
+  });
+
+  // Send SMS for announcement
+  app.post("/api/announcements/:id/send-sms", async (req, res) => {
+    try {
+      const { actorId } = req.body;
+      
+      if (!actorId) {
+        return res.status(400).json({ error: "actorId is required" });
+      }
+
+      const actor = await storage.getUser(actorId);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 SMS를 발송할 수 있습니다" });
+      }
+
+      const announcement = await storage.getAnnouncement(req.params.id);
+      if (!announcement) {
+        return res.status(404).json({ error: "Announcement not found" });
+      }
+
+      const center = await storage.getCenter(announcement.centerId);
+      if (!center) {
+        return res.status(404).json({ error: "Center not found" });
+      }
+
+      const configured = await isSolapiConfigured(center.name);
+      if (!configured) {
+        return res.status(400).json({ error: "SMS 설정이 되어있지 않습니다" });
+      }
+
+      // Get target students based on targetType
+      let students: User[] = [];
+      
+      if (announcement.targetType === "class") {
+        // Get students from specified classes
+        for (const classId of announcement.targetIds) {
+          const classStudents = await storage.getClassStudents(classId);
+          students.push(...classStudents);
+        }
+      } else if (announcement.targetType === "grade") {
+        // Get students by grade
+        const allUsers = await storage.getUsers(announcement.centerId);
+        students = allUsers.filter(u => 
+          u.role === UserRole.STUDENT && 
+          announcement.targetIds.includes(u.grade || "")
+        );
+      } else if (announcement.targetType === "students") {
+        // Get specific students
+        for (const studentId of announcement.targetIds) {
+          const student = await storage.getUser(studentId);
+          if (student && student.role === UserRole.STUDENT) {
+            students.push(student);
+          }
+        }
+      }
+
+      // Deduplicate students
+      const uniqueStudents = Array.from(new Map(students.map(s => [s.id, s])).values());
+
+      // Build SMS message
+      const message = `[${center.name}] 공지사항이 등록되었습니다.\n\n제목: ${announcement.title}\n\n학원 앱에서 확인해주세요.`;
+
+      const results: { phone: string; studentName: string; success: boolean; error?: string }[] = [];
+
+      for (const student of uniqueStudents) {
+        const phones = [student.motherPhone, student.fatherPhone].filter(Boolean) as string[];
+        
+        for (const phone of phones) {
+          try {
+            const smsResult = await sendSms({
+              to: phone,
+              text: message,
+              centerName: center.name,
+            });
+            results.push({ 
+              phone, 
+              studentName: student.name, 
+              success: smsResult.success,
+              error: smsResult.error 
+            });
+          } catch (error) {
+            results.push({ 
+              phone, 
+              studentName: student.name, 
+              success: false, 
+              error: error instanceof Error ? error.message : "Unknown error" 
+            });
+          }
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      const smsStatus = successCount === results.length ? "sent" : 
+                        successCount === 0 ? "failed" : "partial";
+
+      await storage.updateAnnouncement(req.params.id, {
+        smsSentAt: new Date(),
+        smsRecipients: JSON.stringify(results),
+        smsStatus,
+      });
+
+      res.json({ results, status: smsStatus });
+    } catch (error) {
+      console.error("Error sending announcement SMS:", error);
+      res.status(500).json({ error: "Failed to send SMS" });
+    }
+  });
+
+  // Get students for announcement targeting
+  app.get("/api/announcements/targets/students", async (req, res) => {
+    try {
+      const centerId = req.query.centerId as string;
+      if (!centerId) {
+        return res.status(400).json({ error: "centerId is required" });
+      }
+
+      const allUsers = await storage.getUsers(centerId);
+      const students = allUsers.filter(u => u.role === UserRole.STUDENT);
+      res.json(students);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get students" });
+    }
+  });
+
+  // Get grades for announcement targeting
+  app.get("/api/announcements/targets/grades", async (req, res) => {
+    try {
+      const centerId = req.query.centerId as string;
+      if (!centerId) {
+        return res.status(400).json({ error: "centerId is required" });
+      }
+
+      const allUsers = await storage.getUsers(centerId);
+      const students = allUsers.filter(u => u.role === UserRole.STUDENT);
+      const grades = [...new Set(students.map(s => s.grade).filter(Boolean))].sort();
+      res.json(grades);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get grades" });
+    }
+  });
+
   // Todo APIs (투두리스트)
   
   // Get all todos for a center (with optional assignee filter)

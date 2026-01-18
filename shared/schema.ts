@@ -1624,5 +1624,49 @@ export const insertClassPlanSchema = createInsertSchema(classPlans).pick({
 export type InsertClassPlan = z.infer<typeof insertClassPlanSchema>;
 export type ClassPlan = typeof classPlans.$inferSelect;
 
+// Announcements (공지사항)
+// Target types: class (반별), grade (학년별), students (학생 선택)
+export const AnnouncementTargetType = {
+  CLASS: "class",     // 반별
+  GRADE: "grade",     // 학년별
+  STUDENTS: "students", // 학생 선택
+} as const;
+export type AnnouncementTargetTypeValue = typeof AnnouncementTargetType[keyof typeof AnnouncementTargetType];
+
+export const announcements = pgTable("announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  centerId: varchar("center_id").notNull(),
+  createdById: varchar("created_by_id").notNull(),
+  
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  
+  // Targeting
+  targetType: text("target_type").notNull(), // class, grade, students
+  targetIds: text("target_ids").array().notNull(), // class IDs, grade values, or student IDs
+  
+  // SMS notification
+  smsSentAt: timestamp("sms_sent_at"),
+  smsStatus: text("sms_status"), // pending, sent, partial, failed
+  smsRecipients: text("sms_recipients"), // JSON: [{phone, studentName, sentAt, status}]
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAnnouncementSchema = createInsertSchema(announcements).pick({
+  centerId: true,
+  createdById: true,
+  title: true,
+  content: true,
+  targetType: true,
+  targetIds: true,
+  smsSentAt: true,
+  smsStatus: true,
+  smsRecipients: true,
+});
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type Announcement = typeof announcements.$inferSelect;
+
 // Re-export chat models for OpenAI integration
 export * from "./models/chat";

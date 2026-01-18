@@ -15,6 +15,8 @@ import {
   FileBarChart,
   HelpCircle,
   ListTodo,
+  MessageSquare,
+  UserCog,
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,6 +54,13 @@ const classManagementItems = [
 
 const classManagementUrls = classManagementItems.map(item => item.url);
 
+const parentManagementItems = [
+  { title: "문자 안내", url: "/student-reports", icon: FileBarChart },
+  { title: "공지사항", url: "/announcements", icon: MessageSquare },
+];
+
+const parentManagementUrls = parentManagementItems.map(item => item.url);
+
 const kioskMenuItems = [
   { title: "출결패드", url: "/attendance-pad", icon: UserCheck },
 ];
@@ -75,7 +84,6 @@ const teacherMenuItems = [
   { title: "대시보드", url: "/", icon: Home },
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "수업 관리", url: "/timetable", icon: Calendar },
-  { title: "문자 안내", url: "/student-reports", icon: FileBarChart },
   { title: "학생 관리", url: "/users", icon: Users },
   { title: "포인트 관리", url: "/points-management", icon: Coins },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
@@ -86,7 +94,6 @@ const principalMenuItems = [
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "사용자 관리", url: "/users", icon: Users },
   { title: "수업 관리", url: "/timetable", icon: Calendar },
-  { title: "문자 안내", url: "/student-reports", icon: FileBarChart },
   { title: "포인트 관리", url: "/points-management", icon: Coins },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
   { title: "설정", url: "/settings", icon: Settings },
@@ -98,6 +105,9 @@ export function AppSidebar() {
   const { user, logout } = useAuth();
   const [classManagementOpen, setClassManagementOpen] = useState(() => 
     classManagementUrls.includes(location)
+  );
+  const [parentManagementOpen, setParentManagementOpen] = useState(() => 
+    parentManagementUrls.includes(location)
   );
 
   if (!user) return null;
@@ -112,6 +122,7 @@ export function AppSidebar() {
 
   const menuItems = getMenuItems();
   const showClassManagement = user.role >= UserRole.TEACHER;
+  const showParentManagement = user.role >= UserRole.TEACHER;
   const isKiosk = user.role === UserRole.KIOSK;
   
   // Determine where to insert class management
@@ -119,6 +130,7 @@ export function AppSidebar() {
   // Principal: after index 3 (after 사용자 관리, before 시간표 관리)
   // Teacher: after index 0 (after 대시보드, at top)
   const classManagementInsertIndex = user.role >= UserRole.PRINCIPAL ? 4 : 1;
+  const parentManagementInsertIndex = user.role >= UserRole.PRINCIPAL ? 5 : 2;
 
   const renderMenuItem = (item: typeof menuItems[0]) => (
     <SidebarMenuItem key={item.title}>
@@ -171,6 +183,46 @@ export function AppSidebar() {
         <CollapsibleContent>
           <SidebarMenuSub>
             {classManagementItems.map((item) => renderClassManagementItem(item))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  );
+
+  const renderParentManagement = () => (
+    <Collapsible
+      open={parentManagementOpen}
+      onOpenChange={setParentManagementOpen}
+      className="group/collapsible"
+      key="parent-management"
+    >
+      <SidebarMenuItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton
+            isActive={parentManagementUrls.some(url => location.startsWith(url.split("?")[0]))}
+            data-testid="nav-parent-management"
+          >
+            <UserCog className="h-4 w-4" />
+            <span>학부모 관리</span>
+            <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {parentManagementItems.map((item) => (
+              <SidebarMenuSubItem key={item.title}>
+                <SidebarMenuSubButton
+                  asChild
+                  isActive={location === item.url}
+                  data-testid={`nav-${item.url.replace("/", "")}`}
+                >
+                  <Link href={item.url}>
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
           </SidebarMenuSub>
         </CollapsibleContent>
       </SidebarMenuItem>
