@@ -204,6 +204,8 @@ export const assessments = pgTable("assessments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   classId: varchar("class_id").notNull(),
   studentId: varchar("student_id").notNull(),
+  name: text("name"), // 테스트 이름
+  scope: text("scope"), // 시험 범위
   score: integer("score").notNull(),
   maxScore: integer("max_score").notNull().default(100),
   assessmentDate: date("assessment_date").notNull(),
@@ -213,6 +215,8 @@ export const assessments = pgTable("assessments", {
 export const insertAssessmentSchema = createInsertSchema(assessments).pick({
   classId: true,
   studentId: true,
+  name: true,
+  scope: true,
   score: true,
   maxScore: true,
   assessmentDate: true,

@@ -281,6 +281,8 @@ function ScoreInputDialog({ classItem, students, allCenterStudents, onClose }: {
   const { toast } = useToast();
   const [scores, setScores] = useState<Record<string, number>>({});
   const [assessmentDate, setAssessmentDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [testName, setTestName] = useState("");
+  const [testScope, setTestScope] = useState("");
 
   const displayStudents = students.length > 0 ? students : allCenterStudents;
 
@@ -306,7 +308,9 @@ function ScoreInputDialog({ classItem, students, allCenterStudents, onClose }: {
         studentId,
         score,
         maxScore: 100,
-        assessmentDate,
+        assessmentDate: assessmentDate || format(new Date(), "yyyy-MM-dd"),
+        name: testName || null,
+        scope: testScope || null,
       }));
 
     if (assessments.length === 0) {
@@ -320,6 +324,30 @@ function ScoreInputDialog({ classItem, students, allCenterStudents, onClose }: {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
+        <Label htmlFor="testName">테스트 이름</Label>
+        <Input
+          id="testName"
+          type="text"
+          value={testName}
+          onChange={(e) => setTestName(e.target.value)}
+          placeholder="예: 단원평가, 중간고사"
+          data-testid="input-test-name"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="testScope">시험 범위</Label>
+        <Input
+          id="testScope"
+          type="text"
+          value={testScope}
+          onChange={(e) => setTestScope(e.target.value)}
+          placeholder="예: 1-3단원, 분수와 소수"
+          data-testid="input-test-scope"
+        />
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="assessmentDate">평가일</Label>
         <Input
           id="assessmentDate"
@@ -328,6 +356,7 @@ function ScoreInputDialog({ classItem, students, allCenterStudents, onClose }: {
           onChange={(e) => setAssessmentDate(e.target.value)}
           data-testid="input-assessment-date"
         />
+        <p className="text-xs text-muted-foreground">선택하지 않으면 오늘 날짜로 기록됩니다</p>
       </div>
 
       {displayStudents.length === 0 ? (
@@ -641,9 +670,17 @@ function StudentAssessments() {
                                 return (
                                   <div key={assessment.id} className="p-3 rounded-md bg-muted/30">
                                     <div className="flex items-center justify-between mb-2">
-                                      <span className="text-sm text-muted-foreground">
-                                        {format(new Date(assessment.assessmentDate), "M월 d일", { locale: ko })}
-                                      </span>
+                                      <div className="flex flex-col">
+                                        <span className="text-sm text-muted-foreground">
+                                          {format(new Date(assessment.assessmentDate), "M월 d일", { locale: ko })}
+                                        </span>
+                                        {assessment.name && (
+                                          <span className="text-sm font-medium">{assessment.name}</span>
+                                        )}
+                                        {assessment.scope && (
+                                          <span className="text-xs text-muted-foreground">범위: {assessment.scope}</span>
+                                        )}
+                                      </div>
                                       <div className="flex items-center gap-2">
                                         <Badge variant={assessment.score >= assessment.average ? "default" : "secondary"}>
                                           {assessment.score}점
