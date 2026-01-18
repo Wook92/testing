@@ -27,7 +27,8 @@ import TodosPage from "@/pages/todos";
 import PointsPage from "@/pages/points";
 import PointsManagementPage from "@/pages/points-management";
 import AnnouncementsPage from "@/pages/announcements";
-import { Loader2, User, Settings, LogOut, Download, Smartphone } from "lucide-react";
+import { Loader2, User, Settings, LogOut, Download, Smartphone, Coins } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { PWAInstallProvider, usePWAInstall } from "@/lib/pwa-install";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -38,6 +39,13 @@ import { HomeworkDueReminder } from "@/components/homework-due-reminder";
 function ProtectedRoutes() {
   const { user, isLoading, logout } = useAuth();
   const { canInstall, isInstalled, promptInstall, isIOS, showIOSInstructions, setShowIOSInstructions } = usePWAInstall();
+  
+  const isStudent = user?.role === UserRole.STUDENT;
+  
+  const { data: pointsData } = useQuery({
+    queryKey: ["/api/points/balance"],
+    enabled: isStudent && !!user,
+  });
 
   if (isLoading) {
     return (
@@ -76,6 +84,12 @@ function ProtectedRoutes() {
               </Link>
             </div>
             <div className="flex items-center gap-2">
+              {isStudent && pointsData && (
+                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium md:hidden">
+                  <Coins className="h-3.5 w-3.5" />
+                  <span>{pointsData.balance?.toLocaleString() ?? 0}P</span>
+                </div>
+              )}
               <NotificationBell />
               <Popover>
                 <PopoverTrigger asChild>
