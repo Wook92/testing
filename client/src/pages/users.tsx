@@ -261,7 +261,7 @@ function CreateUserDialog({ onClose, teacherOnly = false }: { onClose: () => voi
         { value: "2", label: "선생님" },
         { value: "3", label: "원장" },
         { value: "0", label: "학부모" },
-        { value: "-1", label: "키오스크" },
+        { value: "-1", label: "출결 계정" },
       ]
     : [
         { value: "1", label: "학생" },
@@ -803,7 +803,7 @@ function EditUserDialog({ user: editingUser, onClose }: { user: User; onClose: (
         { value: "2", label: "선생님" },
         { value: "3", label: "원장" },
         { value: "0", label: "학부모" },
-        { value: "-1", label: "키오스크" },
+        { value: "-1", label: "출결 계정" },
       ]
     : [
         { value: "1", label: "학생" },

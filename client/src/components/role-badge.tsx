@@ -24,7 +24,7 @@ const roleConfig: Record<number, { label: string; className: string }> = {
     className: "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200",
   },
   [UserRole.KIOSK]: {
-    label: "키오스크",
+    label: "출결 계정",
     className: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
   },
 };

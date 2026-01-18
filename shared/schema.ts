@@ -5,11 +5,11 @@ import { z } from "zod";
 
 // User roles (simplified hierarchy - ADMIN and CLINIC_TEACHER removed)
 export const UserRole = {
-  PRINCIPAL: 3,       // 원장 - Center management + all teacher features
+  PRINCIPAL: 3,       // 원장 - Full system access + user management
   TEACHER: 2,         // 선생님 - Class management
   STUDENT: 1,         // 학생 - Learning activities
   PARENT: 0,          // 학부모 - Read-only access
-  KIOSK: -1,          // 키오스크 - Attendance pad only
+  KIOSK: -1,          // 출결 계정 - Attendance pad only (auto-redirects to /attendance-pad)
 } as const;
 
 export type UserRoleType = typeof UserRole[keyof typeof UserRole];

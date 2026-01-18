@@ -36,12 +36,12 @@ Preferred communication style: Simple, everyday language.
 ### Authentication & Authorization
 - **Session Management**: Local storage-based auth context
 - **Role-Based Access**: Five-tier permission hierarchy:
-  - Kiosk Lv-1: Attendance pad only (auto-redirects to `/attendance-pad`)
+  - 출결 계정 Lv-1: Attendance pad only (auto-redirects to `/attendance-pad`)
   - Parent Lv0: Read-only access
   - Student Lv1: Homework, assessments, points
   - Teacher Lv2: Class management, attendance, class notes, homework
   - Principal Lv3: Full system access (all teacher features + user management, points management)
-- **Kiosk Account**: Special account type for dedicated attendance pad devices. Created by Principal, automatically redirects to `/attendance-pad` on login with simplified UI and logout via settings.
+- **출결 계정 (Check-in Account)**: Special account type for dedicated attendance pad devices. Created by Principal in user management, automatically redirects to `/attendance-pad` on login with simplified UI and logout button.
 - **Single Academy Mode**: System operates as a single academy without center/branch filtering
 
 ### Key Features & Implementations
