@@ -1185,22 +1185,33 @@ export default function TimetablePage() {
   const timetableContent = (
     <>
       {!isTeacherOnly && teachers && teachers.length > 0 && (
-        <Tabs value={effectiveTeacher || (teachers[0]?.id ?? "")} onValueChange={setSelectedTeacher}>
-          <TabsList className="flex-wrap h-auto gap-1">
-            {teachers.map((t) => (
-              <TabsTrigger key={t.id} value={t.id}>
-                {t.name} 선생님
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              {isStudent ? "선생님 선택" : "담당 선생님"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Tabs value={effectiveTeacher || (teachers[0]?.id ?? "")} onValueChange={setSelectedTeacher}>
+              <TabsList className="flex-wrap h-auto gap-1 w-full justify-start">
+                {teachers.map((t) => (
+                  <TabsTrigger key={t.id} value={t.id} className="px-4">
+                    {t.name} 선생님
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </CardContent>
+        </Card>
       )}
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="h-5 w-5" />
-            시간표
+            {isStudent && effectiveTeacher && teacherMap.get(effectiveTeacher) 
+              ? `${teacherMap.get(effectiveTeacher)?.name} 선생님 시간표`
+              : "시간표"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1253,9 +1264,11 @@ export default function TimetablePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">수업 관리</h1>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">
+            {isStudent ? "학원 시간표" : "수업 관리"}
+          </h1>
           <p className="text-muted-foreground">
-            시간표 및 수업 계획
+            {isStudent ? "선생님별 시간표를 확인하세요" : "시간표 및 수업 계획"}
           </p>
         </div>
         {isTeacherOrAbove && mainTab === "timetable" && (
