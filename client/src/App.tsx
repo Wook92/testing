@@ -42,8 +42,8 @@ function ProtectedRoutes() {
   
   const isStudent = user?.role === UserRole.STUDENT;
   
-  const { data: pointsData } = useQuery({
-    queryKey: ["/api/points/balance"],
+  const { data: pointsData } = useQuery<{ balance: number }>({
+    queryKey: [`/api/points/my-points?actorId=${user?.id}`],
     enabled: isStudent && !!user,
   });
 
