@@ -41,7 +41,6 @@ const principalSections: ManualSection[] = [
         title: "월별 학생 수 통계",
         description: "연도별 월간 학생 수 변화를 차트로 확인할 수 있습니다.",
         steps: [
-          "좌측 상단의 센터를 선택합니다",
           "연도를 선택하여 해당 연도의 통계를 확인합니다",
           "막대 그래프에 마우스를 올리면 정확한 수치가 표시됩니다",
           "전년도 대비 증감률이 퍼센트로 함께 표시됩니다"
@@ -58,8 +57,7 @@ const principalSections: ManualSection[] = [
     ],
     tips: [
       "대시보드에서 학원 전체 현황을 한눈에 파악할 수 있습니다",
-      "차트는 매일 자정에 자동으로 업데이트됩니다",
-      "센터별로 필터링하여 각 센터의 현황을 개별 확인할 수 있습니다"
+      "차트는 매일 자정에 자동으로 업데이트됩니다"
     ],
     lastUpdated: "2025-01"
   },
@@ -78,7 +76,6 @@ const principalSections: ManualSection[] = [
           "전화번호를 입력합니다 (로그인 ID로 사용됩니다)",
           "비밀번호를 설정합니다",
           "역할(권한)을 선택합니다: 선생님, 학생, 학부모 등",
-          "소속 센터를 선택합니다 (여러 센터 선택 가능)",
           "학생인 경우 학년을 선택합니다",
           "'저장' 버튼을 클릭하여 완료합니다"
         ]
@@ -130,8 +127,7 @@ const principalSections: ManualSection[] = [
         description: "원하는 사용자를 빠르게 찾을 수 있습니다.",
         steps: [
           "검색창에 이름 또는 전화번호를 입력합니다",
-          "역할별 필터를 사용하여 선생님/학생/학부모만 표시할 수 있습니다",
-          "센터별 필터로 특정 센터 소속만 볼 수 있습니다"
+          "역할별 필터를 사용하여 선생님/학생/학부모만 표시할 수 있습니다"
         ]
       }
     ],
@@ -153,7 +149,6 @@ const principalSections: ManualSection[] = [
         title: "시간표 조회",
         description: "요일별, 시간대별 수업 일정을 확인합니다.",
         steps: [
-          "상단에서 센터를 선택합니다",
           "요일 탭(월~일)을 클릭하여 해당 요일 수업을 확인합니다",
           "수업 카드를 클릭하면 상세 정보가 표시됩니다"
         ]
@@ -315,7 +310,7 @@ const principalSections: ManualSection[] = [
     id: "settings",
     title: "설정",
     icon: Settings,
-    description: "개인 및 센터 설정을 관리하는 페이지입니다.",
+    description: "개인 설정을 관리하는 페이지입니다.",
     features: [
       {
         title: "비밀번호 변경",
@@ -337,10 +332,9 @@ const principalSections: ManualSection[] = [
         ]
       },
       {
-        title: "센터 설정",
-        description: "센터별 기능 활성화를 관리합니다.",
+        title: "SMS 설정",
+        description: "SMS 알림 기능을 관리합니다.",
         steps: [
-          "센터를 선택합니다",
           "SOLAPI SMS 연동 정보를 입력합니다"
         ]
       }
@@ -396,7 +390,6 @@ const teacherSections: ManualSection[] = [
         title: "시간표 조회",
         description: "요일별, 시간대별 수업 일정을 확인합니다.",
         steps: [
-          "상단에서 센터를 선택합니다",
           "요일 탭(월~일)을 클릭하여 해당 요일 수업을 확인합니다",
           "수업 카드를 클릭하면 상세 정보가 표시됩니다",
           "내 수업은 강조 표시됩니다"

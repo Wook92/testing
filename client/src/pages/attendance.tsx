@@ -730,7 +730,7 @@ export default function AttendancePage() {
                           data-testid="input-teacher-checkin-message"
                         />
                         <p className="text-xs text-muted-foreground">
-                          사용 가능한 변수: {"{센터명}"}, {"{선생님명}"}, {"{시간}"}
+                          사용 가능한 변수: {"{선생님명}"}, {"{시간}"}
                         </p>
                       </div>
                       <Button

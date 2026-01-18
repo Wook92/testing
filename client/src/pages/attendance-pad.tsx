@@ -436,9 +436,6 @@ export default function AttendancePadPage() {
       <div className="flex-1 flex items-center justify-center p-2 landscape:p-4">
         <div className="flex flex-col landscape:flex-row landscape:gap-12 items-center justify-center w-full max-w-5xl">
           <div className="text-center mb-4 landscape:mb-0 landscape:flex-1 flex flex-col items-center justify-center">
-            <h1 
-              className="text-2xl landscape:text-4xl font-bold text-primary mx-auto mb-2 landscape:mb-4"
-            >프라임수학</h1>
             <div className="text-sm landscape:text-lg text-muted-foreground">
               {format(currentTime, "yyyy년 M월 d일 EEEE", { locale: ko })}
             </div>

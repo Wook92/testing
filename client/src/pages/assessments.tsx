@@ -339,7 +339,7 @@ function ScoreInputDialog({ classItem, students, allCenterStudents, onClose }: {
         <>
           {students.length === 0 && allCenterStudents.length > 0 && (
             <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-              이 평가 수업에 등록된 학생이 없어 센터 전체 학생을 표시합니다
+              이 평가 수업에 등록된 학생이 없어 전체 학생을 표시합니다
             </p>
           )}
           <div className="space-y-3 max-h-[300px] overflow-y-auto">

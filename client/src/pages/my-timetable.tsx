@@ -299,13 +299,7 @@ export default function MyTimetablePage() {
                     <span>{selectedClass.classroom}</span>
                   </div>
                 )}
-                {selectedClass.center && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">센터</span>
-                    <span>{selectedClass.center.name}</span>
-                  </div>
-                )}
-              </div>
+                              </div>
 
               <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setSelectedClass(null)}>

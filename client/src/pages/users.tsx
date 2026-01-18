@@ -1167,8 +1167,8 @@ function BulkUploadDialog({ onClose }: { onClose: () => void }) {
   };
 
   const downloadTemplate = () => {
-    const headers = ["이름", "학교", "학년", "어머니 전화번호", "아버지 전화번호", "학생 전화번호", "센터명"];
-    const sampleData = ["(예시삭제)홍길동", "서울초등학교", "초6", "010-1234-5678", "010-8765-4321", "010-5555-5555", "DMC센터"];
+    const headers = ["이름", "학교", "학년", "어머니 전화번호", "아버지 전화번호", "학생 전화번호"];
+    const sampleData = ["(예시삭제)홍길동", "서울초등학교", "초6", "010-1234-5678", "010-8765-4321", "010-5555-5555"];
     const csv = [headers.join(","), sampleData.join(",")].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -1216,7 +1216,7 @@ function BulkUploadDialog({ onClose }: { onClose: () => void }) {
         <div className="flex-1">
           <p className="text-sm font-medium">엑셀 파일 양식</p>
           <p className="text-xs text-muted-foreground">
-            열: 이름, 학교, 학년, 어머니 전화번호, 아버지 전화번호, 학생 전화번호, 센터명
+            열: 이름, 학교, 학년, 어머니 전화번호, 아버지 전화번호, 학생 전화번호
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
