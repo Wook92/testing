@@ -85,9 +85,9 @@ function ProtectedRoutes() {
             </div>
             <div className="flex items-center gap-2">
               {isStudent && pointsData && (
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-200 dark:bg-amber-800/40 text-amber-800 dark:text-amber-200 text-xs font-semibold md:hidden border border-amber-300 dark:border-amber-700">
-                  <Coins className="h-3.5 w-3.5" />
-                  <span>{pointsData.available?.toLocaleString() ?? 0}P</span>
+                <div className="flex items-center gap-1 text-muted-foreground md:hidden">
+                  <Coins className="h-4 w-4 text-amber-600" />
+                  <span className="text-xs font-medium">{pointsData.available?.toLocaleString() ?? 0}P</span>
                 </div>
               )}
               <NotificationBell />
