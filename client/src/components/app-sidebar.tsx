@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   Home,
   Calendar,
@@ -85,8 +86,8 @@ const teacherMenuItems = [
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "수업 관리", url: "/timetable", icon: Calendar },
   { title: "학생 관리", url: "/users", icon: Users },
-  { title: "포인트 관리", url: "/points-management", icon: Coins },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
+  { title: "포인트 관리", url: "/points-management", icon: Coins },
 ];
 
 const principalMenuItems = [
@@ -94,9 +95,9 @@ const principalMenuItems = [
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "사용자 관리", url: "/users", icon: Users },
   { title: "수업 관리", url: "/timetable", icon: Calendar },
-  { title: "포인트 관리", url: "/points-management", icon: Coins },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
   { title: "설정", url: "/settings", icon: Settings },
+  { title: "포인트 관리", url: "/points-management", icon: Coins },
 ];
 
 
@@ -109,6 +110,13 @@ export function AppSidebar() {
   const [parentManagementOpen, setParentManagementOpen] = useState(() => 
     parentManagementUrls.includes(location)
   );
+
+  const isStudent = user?.role === UserRole.STUDENT;
+
+  const { data: pointsData } = useQuery<{ balance: number }>({
+    queryKey: [`/api/points/my-points?actorId=${user?.id}`],
+    enabled: !!user && isStudent,
+  });
 
   if (!user) return null;
 
@@ -258,6 +266,14 @@ export function AppSidebar() {
               </div>
               <p className="text-xs text-muted-foreground truncate">{user.username}</p>
             </div>
+            {isStudent && pointsData && (
+              <div className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full">
+                <Coins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                  {pointsData.balance?.toLocaleString() ?? 0}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </SidebarHeader>
