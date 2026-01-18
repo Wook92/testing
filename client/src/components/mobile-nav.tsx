@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { Home, Calendar, ClipboardList, BarChart3, MoreHorizontal, Building2, Users, Settings, UserCheck, FileText, FileBarChart, HelpCircle, ListTodo, TrendingUp } from "lucide-react";
+import { Home, Calendar, ClipboardList, BarChart3, MoreHorizontal, Building2, Users, Settings, UserCheck, FileText, FileBarChart, HelpCircle, ListTodo, TrendingUp, BookOpen, Coins, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { UserRole } from "@shared/schema";
@@ -14,6 +14,17 @@ const studentTimetableItems = [
   { title: "학원 시간표", url: "/timetable", icon: Building2 },
 ];
 
+const studentClassItems = [
+  { title: "숙제", url: "/homework", icon: ClipboardList },
+  { title: "평가", url: "/assessments", icon: BarChart3 },
+];
+
+const studentMoreItems = [
+  { title: "공지사항", url: "/announcements", icon: MessageSquare },
+  { title: "포인트", url: "/points", icon: Coins },
+  { title: "매뉴얼", url: "/manual", icon: HelpCircle },
+];
+
 const classManagementItems = [
   { title: "출결 관리", url: "/attendance", icon: UserCheck },
   { title: "숙제 관리", url: "/homework", icon: ClipboardList },
@@ -22,6 +33,8 @@ const classManagementItems = [
 ];
 
 const classManagementUrls = classManagementItems.map(item => item.url.split("?")[0]);
+const studentClassUrls = studentClassItems.map(item => item.url);
+const studentMoreUrls = studentMoreItems.map(item => item.url);
 
 const parentAllItems = [
   { title: "홈", url: "/", icon: Home },
@@ -30,9 +43,6 @@ const parentAllItems = [
 
 const studentAllItems = [
   { title: "홈", url: "/", icon: Home },
-  { title: "숙제", url: "/homework", icon: ClipboardList },
-  { title: "평가", url: "/assessments", icon: BarChart3 },
-  { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
 const teacherAllItems = [
@@ -62,6 +72,8 @@ export function MobileNav() {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [timetableMenuOpen, setTimetableMenuOpen] = useState(false);
   const [classManagementMenuOpen, setClassManagementMenuOpen] = useState(false);
+  const [studentClassMenuOpen, setStudentClassMenuOpen] = useState(false);
+  const [studentMoreMenuOpen, setStudentMoreMenuOpen] = useState(false);
   
 
   if (!user) return null;
@@ -85,6 +97,8 @@ export function MobileNav() {
   const isMoreActive = moreItems.some(item => location === item.url);
   const isTimetableActive = location === "/my-timetable" || location === "/timetable";
   const isClassManagementActive = classManagementUrls.includes(location);
+  const isStudentClassActive = studentClassUrls.includes(location);
+  const isStudentMoreActive = studentMoreUrls.includes(location);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
@@ -149,45 +163,119 @@ export function MobileNav() {
         )}
         
         {isStudent && (
-          <Popover open={timetableMenuOpen} onOpenChange={setTimetableMenuOpen}>
-            <PopoverTrigger asChild>
-              <button
-                className={cn(
-                  "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-                  isTimetableActive ? "text-primary" : "text-muted-foreground"
-                )}
-                data-testid="mobile-nav-timetable"
-              >
-                <Calendar className="h-5 w-5" />
-                <span className="text-xs font-medium">시간표</span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-44 p-2" align="center" side="top">
-              <div className="flex flex-col gap-1">
-                {studentTimetableItems.map((item) => (
-                  <button
-                    key={item.url}
-                    onClick={() => {
-                      setLocation(item.url);
-                      setTimetableMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm hover-elevate",
-                      location === item.url && "bg-accent"
-                    )}
-                    data-testid={`mobile-nav-timetable-${item.url.replace("/", "")}`}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.title}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <>
+            <Popover open={timetableMenuOpen} onOpenChange={setTimetableMenuOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                    isTimetableActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                  data-testid="mobile-nav-timetable"
+                >
+                  <Calendar className="h-5 w-5" />
+                  <span className="text-xs font-medium">시간표</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-44 p-2" align="center" side="top">
+                <div className="flex flex-col gap-1">
+                  {studentTimetableItems.map((item) => (
+                    <button
+                      key={item.url}
+                      onClick={() => {
+                        setLocation(item.url);
+                        setTimetableMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md text-sm hover-elevate",
+                        location === item.url && "bg-accent"
+                      )}
+                      data-testid={`mobile-nav-timetable-${item.url.replace("/", "")}`}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            <Popover open={studentClassMenuOpen} onOpenChange={setStudentClassMenuOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                    isStudentClassActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                  data-testid="mobile-nav-student-class"
+                >
+                  <BookOpen className="h-5 w-5" />
+                  <span className="text-xs font-medium">수업</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-44 p-2" align="center" side="top">
+                <div className="flex flex-col gap-1">
+                  {studentClassItems.map((item) => (
+                    <button
+                      key={item.url}
+                      onClick={() => {
+                        setLocation(item.url);
+                        setStudentClassMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md text-sm hover-elevate",
+                        location === item.url && "bg-accent"
+                      )}
+                      data-testid={`mobile-nav-student-class-${item.url.replace("/", "")}`}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            <Popover open={studentMoreMenuOpen} onOpenChange={setStudentMoreMenuOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
+                    isStudentMoreActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                  data-testid="mobile-nav-student-more"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                  <span className="text-xs font-medium">더보기</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-44 p-2" align="end" side="top">
+                <div className="flex flex-col gap-1">
+                  {studentMoreItems.map((item) => (
+                    <button
+                      key={item.url}
+                      onClick={() => {
+                        setLocation(item.url);
+                        setStudentMoreMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md text-sm hover-elevate",
+                        location === item.url && "bg-accent"
+                      )}
+                      data-testid={`mobile-nav-student-more-${item.url.replace("/", "")}`}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </>
         )}
         
         
-        {moreItems.length > 0 && (
+        {!isStudent && moreItems.length > 0 && (
           <Popover open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
             <PopoverTrigger asChild>
               <button
