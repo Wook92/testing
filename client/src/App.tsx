@@ -17,21 +17,17 @@ import TimetablePage from "@/pages/timetable";
 import MyTimetablePage from "@/pages/my-timetable";
 import HomeworkPage from "@/pages/homework";
 import AssessmentsPage from "@/pages/assessments";
-import VideosPage from "@/pages/videos";
-import TextbooksPage from "@/pages/textbooks";
 import UsersPage from "@/pages/users";
-import CentersPage from "@/pages/centers";
 import SettingsPage from "@/pages/settings";
-import ClinicPage from "@/pages/clinic";
 import AttendancePage from "@/pages/attendance";
 import AttendancePadPage from "@/pages/attendance-pad";
 import ClassNotesPage from "@/pages/class-notes";
-import StudyCafePage from "@/pages/study-cafe";
-import TuitionPage from "@/pages/tuition";
 import StudentReportsPage from "@/pages/student-reports";
 import ManualPage from "@/pages/manual";
 import TodosPage from "@/pages/todos";
-import ManagementPage from "@/pages/management";
+import PointsPage from "@/pages/points";
+import PointsManagementPage from "@/pages/points-management";
+import ClassPlansPage from "@/pages/class-plans";
 import { Loader2, User, Settings, LogOut, Download, Smartphone } from "lucide-react";
 import { PWAInstallProvider, usePWAInstall } from "@/lib/pwa-install";
 import { Button } from "@/components/ui/button";
@@ -77,7 +73,7 @@ function ProtectedRoutes() {
             <div className="flex items-center gap-2">
               <SidebarTrigger className="hidden md:flex" data-testid="button-sidebar-toggle" />
               <Link href="/" className="md:hidden">
-                <span className="font-bold text-lg text-primary" data-testid="link-logo-home">프라임수학</span>
+                <span className="font-bold text-lg text-primary" data-testid="link-logo-home">로고</span>
               </Link>
               <div className="md:hidden text-sm font-medium text-muted-foreground">
                 {user?.role !== undefined && user.role >= UserRole.TEACHER && <CenterSelector />}
@@ -136,19 +132,15 @@ function ProtectedRoutes() {
               <Route path="/my-timetable" component={MyTimetablePage} />
               <Route path="/homework" component={HomeworkPage} />
               <Route path="/assessments" component={AssessmentsPage} />
-              <Route path="/videos" component={VideosPage} />
-              <Route path="/textbooks" component={TextbooksPage} />
               <Route path="/users" component={UsersPage} />
-              <Route path="/centers" component={CentersPage} />
-              <Route path="/clinic" component={ClinicPage} />
               <Route path="/attendance" component={AttendancePage} />
               <Route path="/class-notes" component={ClassNotesPage} />
-              <Route path="/study-cafe" component={StudyCafePage} />
-              <Route path="/tuition" component={TuitionPage} />
               <Route path="/student-reports" component={StudentReportsPage} />
               <Route path="/todos" component={TodosPage} />
               <Route path="/manual" component={ManualPage} />
-              <Route path="/management" component={ManagementPage} />
+              <Route path="/points" component={PointsPage} />
+              <Route path="/points-management" component={PointsManagementPage} />
+              <Route path="/class-plans" component={ClassPlansPage} />
               <Route path="/settings" component={SettingsPage} />
               <Route component={NotFound} />
             </Switch>

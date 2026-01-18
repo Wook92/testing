@@ -1567,5 +1567,66 @@ export const insertTeacherSalaryAdjustmentSchema = createInsertSchema(teacherSal
 export type InsertTeacherSalaryAdjustment = z.infer<typeof insertTeacherSalaryAdjustmentSchema>;
 export type TeacherSalaryAdjustment = typeof teacherSalaryAdjustments.$inferSelect;
 
+// Points system (학생 포인트)
+export const studentPoints = pgTable("student_points", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").notNull(),
+  totalPoints: integer("total_points").notNull().default(0),
+  availablePoints: integer("available_points").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertStudentPointsSchema = createInsertSchema(studentPoints).pick({
+  studentId: true,
+  totalPoints: true,
+  availablePoints: true,
+});
+export type InsertStudentPoints = z.infer<typeof insertStudentPointsSchema>;
+export type StudentPoints = typeof studentPoints.$inferSelect;
+
+// Points transactions (포인트 내역)
+export const pointTransactions = pgTable("point_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  studentId: varchar("student_id").notNull(),
+  amount: integer("amount").notNull(), // positive = earned, negative = used
+  type: text("type").notNull(), // attendance, homework, test, manual, usage
+  description: text("description").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by"), // teacher/admin who created manual transaction
+});
+
+export const insertPointTransactionSchema = createInsertSchema(pointTransactions).pick({
+  studentId: true,
+  amount: true,
+  type: true,
+  description: true,
+  createdBy: true,
+});
+export type InsertPointTransaction = z.infer<typeof insertPointTransactionSchema>;
+export type PointTransaction = typeof pointTransactions.$inferSelect;
+
+// Class plans (수업 계획)
+export const classPlans = pgTable("class_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  classId: varchar("class_id").notNull(),
+  planType: text("plan_type").notNull(), // weekly, monthly
+  periodStart: date("period_start").notNull(), // week start or month start
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by"),
+});
+
+export const insertClassPlanSchema = createInsertSchema(classPlans).pick({
+  classId: true,
+  planType: true,
+  periodStart: true,
+  content: true,
+  createdBy: true,
+});
+export type InsertClassPlan = z.infer<typeof insertClassPlanSchema>;
+export type ClassPlan = typeof classPlans.$inferSelect;
+
 // Re-export chat models for OpenAI integration
 export * from "./models/chat";

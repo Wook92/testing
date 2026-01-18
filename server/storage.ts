@@ -113,6 +113,12 @@ import {
   type TeacherSalaryAdjustment, type InsertTeacherSalaryAdjustment,
   studentTextbookPurchases,
   type StudentTextbookPurchase, type InsertStudentTextbookPurchase,
+  studentPoints,
+  pointTransactions,
+  classPlans,
+  type StudentPoints, type InsertStudentPoints,
+  type PointTransaction, type InsertPointTransaction,
+  type ClassPlan, type InsertClassPlan,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, inArray, lt, desc, gte, lte, isNull } from "drizzle-orm";
@@ -3040,6 +3046,141 @@ export class DatabaseStorage implements IStorage {
 
   async deleteStudentTextbookPurchase(id: string): Promise<void> {
     await db.delete(studentTextbookPurchases).where(eq(studentTextbookPurchases.id, id));
+  }
+
+  // Points System Methods
+  async getStudentPoints(studentId: string): Promise<StudentPoints | undefined> {
+    const result = await db.select().from(studentPoints).where(eq(studentPoints.studentId, studentId));
+    return result[0];
+  }
+
+  async getPointTransactions(studentId: string, limit: number = 20): Promise<PointTransaction[]> {
+    return await db.select().from(pointTransactions)
+      .where(eq(pointTransactions.studentId, studentId))
+      .orderBy(desc(pointTransactions.createdAt))
+      .limit(limit);
+  }
+
+  async getPointTransactionsSince(studentId: string, since: Date): Promise<PointTransaction[]> {
+    return await db.select().from(pointTransactions)
+      .where(and(
+        eq(pointTransactions.studentId, studentId),
+        gte(pointTransactions.createdAt, since)
+      ))
+      .orderBy(desc(pointTransactions.createdAt));
+  }
+
+  async addPoints(studentId: string, amount: number, type: string, description: string, createdBy?: string): Promise<void> {
+    const existingPoints = await this.getStudentPoints(studentId);
+    
+    if (existingPoints) {
+      await db.update(studentPoints)
+        .set({
+          totalPoints: existingPoints.totalPoints + amount,
+          availablePoints: existingPoints.availablePoints + amount,
+          updatedAt: new Date(),
+        })
+        .where(eq(studentPoints.studentId, studentId));
+    } else {
+      await db.insert(studentPoints).values({
+        studentId,
+        totalPoints: amount,
+        availablePoints: amount,
+      });
+    }
+
+    await db.insert(pointTransactions).values({
+      studentId,
+      amount,
+      type,
+      description,
+      createdBy,
+    });
+  }
+
+  async usePoints(studentId: string, amount: number, description: string, createdBy?: string): Promise<void> {
+    const existingPoints = await this.getStudentPoints(studentId);
+    if (!existingPoints || existingPoints.availablePoints < amount) {
+      throw new Error("포인트가 부족합니다");
+    }
+
+    await db.update(studentPoints)
+      .set({
+        availablePoints: existingPoints.availablePoints - amount,
+        updatedAt: new Date(),
+      })
+      .where(eq(studentPoints.studentId, studentId));
+
+    await db.insert(pointTransactions).values({
+      studentId,
+      amount: -amount,
+      type: "usage",
+      description,
+      createdBy,
+    });
+  }
+
+  async getStudentsWithPoints(centerId?: string): Promise<any[]> {
+    const allStudents = await this.getUsers(centerId);
+    const students = allStudents.filter(u => u.role === UserRole.STUDENT);
+    
+    const result = [];
+    for (const student of students) {
+      const points = await this.getStudentPoints(student.id);
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthlyTransactions = await this.getPointTransactionsSince(student.id, monthStart);
+      const monthlyPoints = monthlyTransactions
+        .filter(t => t.amount > 0)
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      result.push({
+        id: student.id,
+        name: student.name,
+        grade: student.grade,
+        phone: student.phone,
+        points: points?.totalPoints || 0,
+        availablePoints: points?.availablePoints || 0,
+        monthlyPoints,
+      });
+    }
+    
+    return result;
+  }
+
+  // Class Plans Methods
+  async getClassPlan(classId: string, planType: string, periodStart: string): Promise<ClassPlan | undefined> {
+    const result = await db.select().from(classPlans)
+      .where(and(
+        eq(classPlans.classId, classId),
+        eq(classPlans.planType, planType),
+        eq(classPlans.periodStart, periodStart)
+      ));
+    return result[0];
+  }
+
+  async upsertClassPlan(classId: string, planType: string, periodStart: string, content: string, createdBy?: string): Promise<ClassPlan> {
+    const existing = await this.getClassPlan(classId, planType, periodStart);
+    
+    if (existing) {
+      const result = await db.update(classPlans)
+        .set({
+          content,
+          updatedAt: new Date(),
+        })
+        .where(eq(classPlans.id, existing.id))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(classPlans).values({
+        classId,
+        planType,
+        periodStart,
+        content,
+        createdBy,
+      }).returning();
+      return result[0];
+    }
   }
 }
 

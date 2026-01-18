@@ -1,27 +1,21 @@
 import { useState } from "react";
-import { useLocation, useSearch, Link } from "wouter";
+import { useLocation, Link } from "wouter";
 import {
   Home,
   Calendar,
   ClipboardList,
   BarChart3,
-  Video,
   BookOpen,
   Users,
-  Building2,
   Settings,
   LogOut,
-  Stethoscope,
   UserCheck,
   FileText,
-  Coffee,
-  DollarSign,
   ChevronDown,
   GraduationCap,
   FileBarChart,
   HelpCircle,
   ListTodo,
-  TrendingUp,
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,16 +49,6 @@ const classManagementItems = [
   { title: "숙제 관리", url: "/homework", icon: ClipboardList },
   { title: "수업 기록", url: "/class-notes", icon: FileText },
   { title: "평가 관리", url: "/assessments", icon: BarChart3 },
-  { 
-    title: "클리닉", 
-    url: "/clinic", 
-    icon: Stethoscope,
-    subItems: [
-      { title: "고등클리닉", url: "/clinic?type=high" },
-      { title: "중등클리닉", url: "/clinic?type=middle" },
-    ]
-  },
-  { title: "수업 영상", url: "/videos", icon: Video },
 ];
 
 const classManagementUrls = classManagementItems.map(item => item.url);
@@ -75,7 +59,6 @@ const kioskMenuItems = [
 
 const parentMenuItems = [
   { title: "홈", url: "/", icon: Home },
-  { title: "교육비", url: "/tuition", icon: DollarSign },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
@@ -85,10 +68,7 @@ const studentMenuItems = [
   { title: "학원 시간표", url: "/timetable", icon: Calendar },
   { title: "숙제", url: "/homework", icon: ClipboardList },
   { title: "평가", url: "/assessments", icon: BarChart3 },
-  { title: "스터디카페", url: "/study-cafe", icon: Coffee },
-  { title: "수업 영상", url: "/videos", icon: Video },
-  { title: "교재 영상", url: "/textbooks", icon: BookOpen },
-  { title: "교육비", url: "/tuition", icon: DollarSign },
+  { title: "포인트", url: "/points", icon: GraduationCap },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
@@ -96,52 +76,33 @@ const teacherMenuItems = [
   { title: "대시보드", url: "/", icon: Home },
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "시간표", url: "/timetable", icon: Calendar },
+  { title: "수업 계획", url: "/class-plans", icon: BookOpen },
   { title: "월간 보고서", url: "/student-reports", icon: FileBarChart },
-  { title: "학생", url: "/users", icon: Users },
-  { title: "스터디카페", url: "/study-cafe", icon: Coffee },
-  { title: "교재 영상", url: "/textbooks", icon: BookOpen },
+  { title: "학생 관리", url: "/users", icon: Users },
+  { title: "포인트 관리", url: "/points-management", icon: GraduationCap },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
 
 const principalMenuItems = [
   { title: "대시보드", url: "/", icon: Home },
   { title: "투두리스트", url: "/todos", icon: ListTodo },
-  { title: "경영", url: "/management", icon: TrendingUp },
   { title: "사용자 관리", url: "/users", icon: Users },
   { title: "시간표 관리", url: "/timetable", icon: Calendar },
+  { title: "수업 계획", url: "/class-plans", icon: BookOpen },
   { title: "월간 보고서", url: "/student-reports", icon: FileBarChart },
-  { title: "스터디카페", url: "/study-cafe", icon: Coffee },
-  { title: "교재 영상", url: "/textbooks", icon: BookOpen },
-  { title: "교육비", url: "/tuition", icon: DollarSign },
+  { title: "포인트 관리", url: "/points-management", icon: GraduationCap },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
   { title: "설정", url: "/settings", icon: Settings },
 ];
 
-const adminMenuItems = [
-  { title: "대시보드", url: "/", icon: Home },
-  { title: "투두리스트", url: "/todos", icon: ListTodo },
-  { title: "경영", url: "/management", icon: TrendingUp },
-  { title: "센터 관리", url: "/centers", icon: Building2 },
-  { title: "사용자 관리", url: "/users", icon: Users },
-  { title: "시간표 관리", url: "/timetable", icon: Calendar },
-  { title: "월간 보고서", url: "/student-reports", icon: FileBarChart },
-  { title: "스터디카페", url: "/study-cafe", icon: Coffee },
-  { title: "교재 영상", url: "/textbooks", icon: BookOpen },
-  { title: "교육비", url: "/tuition", icon: DollarSign },
-  { title: "매뉴얼", url: "/manual", icon: HelpCircle },
-  { title: "설정", url: "/settings", icon: Settings },
-];
+const adminMenuItems = principalMenuItems;
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const searchString = useSearch();
   const { user, logout } = useAuth();
   const [classManagementOpen, setClassManagementOpen] = useState(() => 
     classManagementUrls.includes(location)
   );
-  
-  const urlParams = new URLSearchParams(searchString);
-  const currentClinicType = urlParams.get("type") || "middle";
 
   if (!user) return null;
 
@@ -179,71 +140,20 @@ export function AppSidebar() {
     </SidebarMenuItem>
   );
 
-  const renderClassManagementItem = (item: typeof classManagementItems[0]) => {
-    if (item.subItems) {
-      const isClinicActive = location.startsWith("/clinic");
-      return (
-        <Collapsible
-          key={item.title}
-          defaultOpen={isClinicActive}
-          className="group/clinic"
-        >
-          <SidebarMenuSubItem>
-            <CollapsibleTrigger asChild>
-              <SidebarMenuSubButton
-                isActive={isClinicActive}
-                data-testid={`nav-${item.url.replace("/", "")}`}
-              >
-                <item.icon className="h-4 w-4" />
-                <span>{item.title}</span>
-                <ChevronDown className="ml-auto h-3 w-3 transition-transform group-data-[state=open]/clinic:rotate-180" />
-              </SidebarMenuSubButton>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarMenuSub className="ml-4">
-                {item.subItems.map((subItem) => {
-                  const isHighType = subItem.url.includes("type=high");
-                  const isMiddleType = subItem.url.includes("type=middle");
-                  const isActive = location === "/clinic" && (
-                    (isHighType && currentClinicType === "high") ||
-                    (isMiddleType && currentClinicType === "middle")
-                  );
-                  return (
-                    <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={isActive}
-                        data-testid={`nav-clinic-${isHighType ? "high" : "middle"}`}
-                      >
-                        <Link href={subItem.url}>
-                          <span>{subItem.title}</span>
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  );
-                })}
-              </SidebarMenuSub>
-            </CollapsibleContent>
-          </SidebarMenuSubItem>
-        </Collapsible>
-      );
-    }
-    
-    return (
-      <SidebarMenuSubItem key={item.title}>
-        <SidebarMenuSubButton
-          asChild
-          isActive={location === item.url}
-          data-testid={`nav-${item.url.replace("/", "")}`}
-        >
-          <Link href={item.url}>
-            <item.icon className="h-4 w-4" />
-            <span>{item.title}</span>
-          </Link>
-        </SidebarMenuSubButton>
-      </SidebarMenuSubItem>
-    );
-  };
+  const renderClassManagementItem = (item: typeof classManagementItems[0]) => (
+    <SidebarMenuSubItem key={item.title}>
+      <SidebarMenuSubButton
+        asChild
+        isActive={location === item.url}
+        data-testid={`nav-${item.url.replace("/", "")}`}
+      >
+        <Link href={item.url}>
+          <item.icon className="h-4 w-4" />
+          <span>{item.title}</span>
+        </Link>
+      </SidebarMenuSubButton>
+    </SidebarMenuSubItem>
+  );
 
   const renderClassManagement = () => (
     <Collapsible
@@ -276,7 +186,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3 mb-4">
-          <span className="font-bold text-xl text-primary">프라임수학</span>
+          <span className="font-bold text-xl text-primary">로고</span>
         </div>
         {isKiosk ? (
           <div className="flex items-center gap-3">

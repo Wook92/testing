@@ -6999,5 +6999,208 @@ export async function registerRoutes(
     }
   });
 
+  // Points System Routes
+  app.get("/api/points/my-points", async (req, res) => {
+    try {
+      const { actorId } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      
+      const points = await storage.getStudentPoints(actorId as string);
+      const history = await storage.getPointTransactions(actorId as string, 20);
+      
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthlyTransactions = await storage.getPointTransactionsSince(actorId as string, monthStart);
+      const monthlyEarned = monthlyTransactions
+        .filter(t => t.amount > 0)
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      res.json({
+        total: points?.totalPoints || 0,
+        available: points?.availablePoints || 0,
+        monthlyEarned,
+        history: history.map(h => ({
+          description: h.description,
+          amount: h.amount,
+          date: format(h.createdAt!, "yyyy-MM-dd"),
+        })),
+      });
+    } catch (error) {
+      console.error("Failed to get points:", error);
+      res.status(500).json({ error: "Failed to get points" });
+    }
+  });
+
+  app.get("/api/students/with-points", async (req, res) => {
+    try {
+      const { actorId, centerId } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      const actor = await storage.getUser(actorId as string);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 접근 가능합니다" });
+      }
+      
+      const students = await storage.getStudentsWithPoints(centerId as string);
+      res.json(students);
+    } catch (error) {
+      console.error("Failed to get students with points:", error);
+      res.status(500).json({ error: "Failed to get students with points" });
+    }
+  });
+
+  app.post("/api/points/add", async (req, res) => {
+    try {
+      const { actorId } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      const actor = await storage.getUser(actorId as string);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 포인트를 지급할 수 있습니다" });
+      }
+      
+      const { studentId, amount, reason } = req.body;
+      if (!studentId || !amount || !reason) {
+        return res.status(400).json({ error: "학생, 포인트, 사유는 필수입니다" });
+      }
+      
+      await storage.addPoints(studentId, amount, "manual", reason, actorId as string);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to add points:", error);
+      res.status(500).json({ error: "Failed to add points" });
+    }
+  });
+
+  app.post("/api/points/use", async (req, res) => {
+    try {
+      const { actorId } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      const actor = await storage.getUser(actorId as string);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 포인트를 사용할 수 있습니다" });
+      }
+      
+      const { studentId, amount, reason } = req.body;
+      if (!studentId || !amount || !reason) {
+        return res.status(400).json({ error: "학생, 포인트, 사유는 필수입니다" });
+      }
+      
+      await storage.usePoints(studentId, amount, reason, actorId as string);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to use points:", error);
+      res.status(500).json({ error: "Failed to use points" });
+    }
+  });
+
+  // Class Plans Routes
+  app.get("/api/classes", async (req, res) => {
+    try {
+      const { actorId, centerId } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      
+      const allClasses = await storage.getClasses(centerId as string | undefined);
+      res.json(allClasses.filter(c => !c.isArchived));
+    } catch (error) {
+      console.error("Failed to get classes:", error);
+      res.status(500).json({ error: "Failed to get classes" });
+    }
+  });
+
+  app.get("/api/class-plans/weekly", async (req, res) => {
+    try {
+      const { actorId, classId, weekStart } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      if (!classId) {
+        return res.json(null);
+      }
+      
+      const plan = await storage.getClassPlan(classId as string, "weekly", weekStart as string);
+      res.json(plan);
+    } catch (error) {
+      console.error("Failed to get weekly plan:", error);
+      res.status(500).json({ error: "Failed to get weekly plan" });
+    }
+  });
+
+  app.get("/api/class-plans/monthly", async (req, res) => {
+    try {
+      const { actorId, classId, month } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      if (!classId) {
+        return res.json(null);
+      }
+      
+      const monthStart = `${month}-01`;
+      const plan = await storage.getClassPlan(classId as string, "monthly", monthStart);
+      res.json(plan);
+    } catch (error) {
+      console.error("Failed to get monthly plan:", error);
+      res.status(500).json({ error: "Failed to get monthly plan" });
+    }
+  });
+
+  app.post("/api/class-plans/weekly", async (req, res) => {
+    try {
+      const { actorId } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      const actor = await storage.getUser(actorId as string);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 수업 계획을 작성할 수 있습니다" });
+      }
+      
+      const { classId, weekStart, content } = req.body;
+      if (!classId || !weekStart) {
+        return res.status(400).json({ error: "수업과 주 시작일은 필수입니다" });
+      }
+      
+      const plan = await storage.upsertClassPlan(classId, "weekly", weekStart, content || "", actorId as string);
+      res.json(plan);
+    } catch (error) {
+      console.error("Failed to save weekly plan:", error);
+      res.status(500).json({ error: "Failed to save weekly plan" });
+    }
+  });
+
+  app.post("/api/class-plans/monthly", async (req, res) => {
+    try {
+      const { actorId } = req.query;
+      if (!actorId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      const actor = await storage.getUser(actorId as string);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 수업 계획을 작성할 수 있습니다" });
+      }
+      
+      const { classId, month, content } = req.body;
+      if (!classId || !month) {
+        return res.status(400).json({ error: "수업과 월은 필수입니다" });
+      }
+      
+      const monthStart = `${month}-01`;
+      const plan = await storage.upsertClassPlan(classId, "monthly", monthStart, content || "", actorId as string);
+      res.json(plan);
+    } catch (error) {
+      console.error("Failed to save monthly plan:", error);
+      res.status(500).json({ error: "Failed to save monthly plan" });
+    }
+  });
+
   return httpServer;
 }

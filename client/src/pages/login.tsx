@@ -73,9 +73,8 @@ export default function LoginPage() {
             className="h-32 flex items-center justify-center" 
             data-testid="img-logo"
           >
-            <h1 className="text-4xl font-bold text-primary">프라임수학</h1>
+            <h1 className="text-4xl font-bold text-primary">로고</h1>
           </div>
-          <p className="text-muted-foreground text-center">수학의 깊이를 배우다</p>
         </div>
 
         <Card>
