@@ -66,11 +66,6 @@ const kioskMenuItems = [
   { title: "출결패드", url: "/attendance-pad", icon: UserCheck },
 ];
 
-const parentMenuItems = [
-  { title: "홈", url: "/", icon: Home },
-  { title: "매뉴얼", url: "/manual", icon: HelpCircle },
-];
-
 const studentMenuItems = [
   { title: "홈", url: "/", icon: Home },
   { title: "나의 시간표", url: "/my-timetable", icon: Calendar },
@@ -128,8 +123,7 @@ export function AppSidebar() {
     if (user.role === UserRole.KIOSK) return kioskMenuItems;
     if (user.role >= UserRole.PRINCIPAL) return principalMenuItems;
     if (user.role >= UserRole.TEACHER) return teacherMenuItems;
-    if (user.role === UserRole.STUDENT) return studentMenuItems;
-    return parentMenuItems;
+    return studentMenuItems;
   };
 
   const menuItems = getMenuItems();

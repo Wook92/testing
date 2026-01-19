@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a comprehensive academy (학원) management platform built as a responsive web application. The system integrates class scheduling, homework management, assessments, and video content delivery into a unified platform. It supports a **5-tier user role hierarchy**: Principal, Teacher, Student, Parent, and Kiosk. Higher-level accounts inherit all permissions from lower levels. The platform features separate interfaces for students versus teachers/administrators, while both share the same underlying database for seamless data interaction. The project aims to streamline academy operations, enhance communication between stakeholders, and provide a robust learning environment.
+This is a comprehensive academy (학원) management platform built as a responsive web application. The system integrates class scheduling, homework management, assessments, and video content delivery into a unified platform. It supports a **4-tier user role hierarchy**: Principal, Teacher, Student, and Kiosk. Higher-level accounts inherit all permissions from lower levels. The platform features separate interfaces for students versus teachers/administrators, while both share the same underlying database for seamless data interaction. The project aims to streamline academy operations, enhance communication between stakeholders, and provide a robust learning environment.
 
 **Branding**: 로고 (Logo)
 
@@ -35,9 +35,8 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication & Authorization
 - **Session Management**: Local storage-based auth context
-- **Role-Based Access**: Five-tier permission hierarchy:
+- **Role-Based Access**: Four-tier permission hierarchy:
   - 출결 계정 Lv-1: Attendance pad only (auto-redirects to `/attendance-pad`)
-  - Parent Lv0: Read-only access
   - Student Lv1: Homework, assessments, points
   - Teacher Lv2: Class management, attendance, class notes, homework
   - Principal Lv3: Full system access (all teacher features + user management, points management)

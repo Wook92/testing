@@ -19,10 +19,6 @@ const roleConfig: Record<number, { label: string; className: string }> = {
     label: "학생",
     className: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
   },
-  [UserRole.PARENT]: {
-    label: "학부모",
-    className: "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200",
-  },
   [UserRole.KIOSK]: {
     label: "출결 계정",
     className: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",

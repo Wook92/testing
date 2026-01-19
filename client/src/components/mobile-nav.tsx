@@ -93,7 +93,6 @@ export function MobileNav() {
   const isTeacher = user.role === UserRole.TEACHER;
   const isStaff = user.role >= UserRole.TEACHER;
   const isStudent = user.role === UserRole.STUDENT;
-  const isParent = user.role === UserRole.PARENT;
   const isKiosk = user.role === UserRole.KIOSK;
 
   if (isKiosk) return null;
@@ -105,35 +104,6 @@ export function MobileNav() {
   const isStudentMoreActive = studentMoreUrls.includes(location);
   const isTeacherMoreActive = teacherMoreUrls.includes(location);
   const isPrincipalMoreActive = principalMoreUrls.includes(location);
-
-  if (isParent) {
-    return (
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-        <div className="flex items-center justify-around h-16">
-          <Link
-            href="/"
-            className={cn(
-              "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-              location === "/" ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <Home className="h-5 w-5" />
-            <span className="text-xs font-medium">홈</span>
-          </Link>
-          <Link
-            href="/manual"
-            className={cn(
-              "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
-              location === "/manual" ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <HelpCircle className="h-5 w-5" />
-            <span className="text-xs font-medium">매뉴얼</span>
-          </Link>
-        </div>
-      </nav>
-    );
-  }
 
   if (isStudent) {
     return (

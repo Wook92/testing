@@ -3,12 +3,11 @@ import { pgTable, text, varchar, integer, boolean, timestamp, date, uniqueIndex 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User roles (simplified hierarchy - ADMIN and CLINIC_TEACHER removed)
+// User roles (simplified hierarchy)
 export const UserRole = {
   PRINCIPAL: 3,       // 원장 - Full system access + user management
   TEACHER: 2,         // 선생님 - Class management
   STUDENT: 1,         // 학생 - Learning activities
-  PARENT: 0,          // 학부모 - Read-only access
   KIOSK: -1,          // 출결 계정 - Attendance pad only (auto-redirects to /attendance-pad)
 } as const;
 
