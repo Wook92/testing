@@ -1305,7 +1305,7 @@ export default function TimetablePage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="h-5 w-5" />
-            {isStudent && effectiveTeacher && teacherMap.get(effectiveTeacher) 
+            {!isTeacherOnly && effectiveTeacher && teacherMap.get(effectiveTeacher) 
               ? `${teacherMap.get(effectiveTeacher)?.name} 선생님 시간표`
               : "시간표"}
           </CardTitle>
