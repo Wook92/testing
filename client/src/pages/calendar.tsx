@@ -1,28 +1,26 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, GraduationCap, School, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Calendar as CalendarIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateQueriesStartingWith } from "@/lib/queryClient";
 import { UserRole } from "@shared/schema";
 import { cn } from "@/lib/utils";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isSameDay, parseISO, startOfWeek, endOfWeek } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isSameDay, parseISO, startOfWeek, endOfWeek, isWithinInterval, differenceInDays, addDays } from "date-fns";
 import { ko } from "date-fns/locale";
 
 interface CalendarEvent {
   id: string;
   title: string;
   description?: string;
-  eventType: "school_exam" | "school_event" | "academy_event";
+  eventType: string;
   schoolName?: string;
   startDate: string;
   endDate?: string;
@@ -32,10 +30,19 @@ interface CalendarEvent {
   updatedAt: string;
 }
 
-const EVENT_TYPES = [
-  { value: "school_exam", label: "학교 시험", icon: GraduationCap, defaultColor: "#EF4444" },
-  { value: "school_event", label: "학교 일정", icon: School, defaultColor: "#3B82F6" },
-  { value: "academy_event", label: "학원 일정", icon: CalendarIcon, defaultColor: "#10B981" },
+const PASTEL_COLORS = [
+  { value: "#FFB3BA", label: "핑크" },
+  { value: "#FFDFBA", label: "피치" },
+  { value: "#FFFFBA", label: "옐로우" },
+  { value: "#BAFFC9", label: "민트" },
+  { value: "#BAE1FF", label: "스카이" },
+  { value: "#E2BAFF", label: "라벤더" },
+  { value: "#FFB3E6", label: "로즈" },
+  { value: "#C9FFBA", label: "라임" },
+  { value: "#BAFFFF", label: "아쿠아" },
+  { value: "#FFCBA4", label: "코랄" },
+  { value: "#D4A5FF", label: "퍼플" },
+  { value: "#A5D4FF", label: "블루" },
 ];
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -48,15 +55,14 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [showEventDialog, setShowEventDialog] = useState(false);
+  const [isRangeEvent, setIsRangeEvent] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    eventType: "academy_event" as "school_exam" | "school_event" | "academy_event",
-    schoolName: "",
     startDate: "",
     endDate: "",
-    color: "",
+    color: PASTEL_COLORS[4].value,
   });
 
   const canEdit = user && user.role >= UserRole.TEACHER;
@@ -69,8 +75,12 @@ export default function CalendarPage() {
   const createEventMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const res = await apiRequest("POST", `/api/calendar-events?actorId=${user?.id}`, {
-        ...data,
-        color: data.color || EVENT_TYPES.find((t) => t.value === data.eventType)?.defaultColor,
+        title: data.title,
+        description: data.description,
+        eventType: "event",
+        startDate: data.startDate,
+        endDate: isRangeEvent ? data.endDate : null,
+        color: data.color,
       });
       return res.json();
     },
@@ -87,8 +97,12 @@ export default function CalendarPage() {
   const updateEventMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
       const res = await apiRequest("PATCH", `/api/calendar-events/${id}?actorId=${user?.id}`, {
-        ...data,
-        color: data.color || EVENT_TYPES.find((t) => t.value === data.eventType)?.defaultColor,
+        title: data.title,
+        description: data.description,
+        eventType: "event",
+        startDate: data.startDate,
+        endDate: isRangeEvent ? data.endDate : null,
+        color: data.color,
       });
       return res.json();
     },
@@ -123,38 +137,84 @@ export default function CalendarPage() {
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentDate]);
 
-  const getEventsForDay = (date: Date) => {
+  const calendarWeeks = useMemo(() => {
+    const weeks: Date[][] = [];
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      weeks.push(calendarDays.slice(i, i + 7));
+    }
+    return weeks;
+  }, [calendarDays]);
+
+  const getMultiDayEventsForWeek = (weekDays: Date[]) => {
+    const weekStart = weekDays[0];
+    const weekEnd = weekDays[6];
+    
+    return events
+      .filter(event => {
+        const eventStart = parseISO(event.startDate);
+        const eventEnd = event.endDate ? parseISO(event.endDate) : eventStart;
+        const isMultiDay = event.endDate && event.endDate !== event.startDate;
+        
+        if (!isMultiDay) return false;
+        
+        return (eventStart <= weekEnd && eventEnd >= weekStart);
+      })
+      .map(event => {
+        const eventStart = parseISO(event.startDate);
+        const eventEnd = parseISO(event.endDate!);
+        
+        const displayStart = eventStart < weekStart ? weekStart : eventStart;
+        const displayEnd = eventEnd > weekEnd ? weekEnd : eventEnd;
+        
+        const startCol = weekDays.findIndex(d => isSameDay(d, displayStart));
+        const endCol = weekDays.findIndex(d => isSameDay(d, displayEnd));
+        
+        const continuesFromPrev = eventStart < weekStart;
+        const continuesToNext = eventEnd > weekEnd;
+        
+        return {
+          ...event,
+          startCol: startCol >= 0 ? startCol : 0,
+          endCol: endCol >= 0 ? endCol : 6,
+          span: (endCol >= 0 ? endCol : 6) - (startCol >= 0 ? startCol : 0) + 1,
+          continuesFromPrev,
+          continuesToNext,
+        };
+      })
+      .sort((a, b) => a.startCol - b.startCol);
+  };
+
+  const getSingleDayEventsForDay = (date: Date) => {
     return events.filter((event) => {
       const eventStart = parseISO(event.startDate);
-      const eventEnd = event.endDate ? parseISO(event.endDate) : eventStart;
-      return date >= eventStart && date <= eventEnd;
+      const isMultiDay = event.endDate && event.endDate !== event.startDate;
+      return !isMultiDay && isSameDay(date, eventStart);
     });
   };
 
   const openCreateDialog = (date?: Date) => {
     setEditingEvent(null);
+    setIsRangeEvent(false);
     setFormData({
       title: "",
       description: "",
-      eventType: "academy_event",
-      schoolName: "",
       startDate: date ? format(date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
       endDate: "",
-      color: "",
+      color: PASTEL_COLORS[4].value,
     });
     setShowEventDialog(true);
   };
 
   const openEditDialog = (event: CalendarEvent) => {
     setEditingEvent(event);
+    const hasEndDate = event.endDate && event.endDate !== event.startDate;
+    setIsRangeEvent(!!hasEndDate);
     setFormData({
       title: event.title,
       description: event.description || "",
-      eventType: event.eventType,
-      schoolName: event.schoolName || "",
       startDate: event.startDate,
       endDate: event.endDate || "",
-      color: event.color || "",
+      color: event.color || PASTEL_COLORS[4].value,
     });
     setShowEventDialog(true);
   };
@@ -162,20 +222,29 @@ export default function CalendarPage() {
   const closeDialog = () => {
     setShowEventDialog(false);
     setEditingEvent(null);
+    setIsRangeEvent(false);
     setFormData({
       title: "",
       description: "",
-      eventType: "academy_event",
-      schoolName: "",
       startDate: "",
       endDate: "",
-      color: "",
+      color: PASTEL_COLORS[4].value,
     });
   };
 
   const handleSubmit = () => {
     if (!formData.title || !formData.startDate) {
-      toast({ title: "제목과 시작일을 입력해주세요", variant: "destructive" });
+      toast({ title: "제목과 날짜를 입력해주세요", variant: "destructive" });
+      return;
+    }
+
+    if (isRangeEvent && !formData.endDate) {
+      toast({ title: "종료일을 입력해주세요", variant: "destructive" });
+      return;
+    }
+
+    if (isRangeEvent && formData.endDate < formData.startDate) {
+      toast({ title: "종료일은 시작일 이후여야 합니다", variant: "destructive" });
       return;
     }
 
@@ -196,10 +265,6 @@ export default function CalendarPage() {
   const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const goToToday = () => setCurrentDate(new Date());
 
-  const getEventTypeInfo = (type: string) => {
-    return EVENT_TYPES.find((t) => t.value === type) || EVENT_TYPES[2];
-  };
-
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
@@ -213,8 +278,8 @@ export default function CalendarPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">캘린더</h1>
-          <p className="text-muted-foreground">학교 시험, 학교 일정, 학원 일정을 관리합니다</p>
+          <h1 className="text-2xl font-bold">학원 캘린더</h1>
+          <p className="text-muted-foreground">학원 일정을 관리합니다</p>
         </div>
         {canEdit && (
           <Button onClick={() => openCreateDialog()}>
@@ -222,15 +287,6 @@ export default function CalendarPage() {
             일정 추가
           </Button>
         )}
-      </div>
-
-      <div className="flex flex-wrap gap-2 mb-4">
-        {EVENT_TYPES.map((type) => (
-          <div key={type.value} className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: type.defaultColor }} />
-            <span className="text-sm">{type.label}</span>
-          </div>
-        ))}
       </div>
 
       <Card>
@@ -254,73 +310,115 @@ export default function CalendarPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-px bg-muted rounded-lg overflow-hidden">
-            {WEEKDAYS.map((day, idx) => (
-              <div
-                key={day}
-                className={cn(
-                  "p-2 text-center text-sm font-medium bg-background",
-                  idx === 0 && "text-red-500",
-                  idx === 6 && "text-blue-500"
-                )}
-              >
-                {day}
-              </div>
-            ))}
-            {calendarDays.map((day, idx) => {
-              const dayEvents = getEventsForDay(day);
-              const isCurrentMonth = isSameMonth(day, currentDate);
-              const isToday = isSameDay(day, new Date());
-              const dayOfWeek = getDay(day);
-
-              return (
+          <div className="border rounded-lg overflow-hidden">
+            <div className="grid grid-cols-7 bg-muted">
+              {WEEKDAYS.map((day, idx) => (
                 <div
-                  key={idx}
-                  onClick={() => {
-                    setSelectedDate(day);
-                    if (canEdit && dayEvents.length === 0) {
-                      openCreateDialog(day);
-                    }
-                  }}
+                  key={day}
                   className={cn(
-                    "min-h-[100px] p-1 bg-background cursor-pointer hover:bg-muted/50 transition-colors",
-                    !isCurrentMonth && "opacity-50"
+                    "p-2 text-center text-sm font-medium border-b",
+                    idx === 0 && "text-red-500",
+                    idx === 6 && "text-blue-500"
                   )}
                 >
-                  <div
-                    className={cn(
-                      "text-sm font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full",
-                      isToday && "bg-primary text-primary-foreground",
-                      dayOfWeek === 0 && "text-red-500",
-                      dayOfWeek === 6 && "text-blue-500"
-                    )}
-                  >
-                    {format(day, "d")}
-                  </div>
-                  <div className="space-y-1">
-                    {dayEvents.slice(0, 3).map((event) => {
-                      const typeInfo = getEventTypeInfo(event.eventType);
+                  {day}
+                </div>
+              ))}
+            </div>
+            {calendarWeeks.map((week, weekIdx) => {
+              const multiDayEvents = getMultiDayEventsForWeek(week);
+              
+              return (
+                <div key={weekIdx} className="relative">
+                  <div className="grid grid-cols-7">
+                    {week.map((day, dayIdx) => {
+                      const singleDayEvents = getSingleDayEventsForDay(day);
+                      const isCurrentMonth = isSameMonth(day, currentDate);
+                      const isToday = isSameDay(day, new Date());
+                      const dayOfWeek = getDay(day);
+
                       return (
                         <div
-                          key={event.id}
+                          key={dayIdx}
+                          onClick={() => {
+                            setSelectedDate(day);
+                            if (canEdit && singleDayEvents.length === 0) {
+                              openCreateDialog(day);
+                            }
+                          }}
+                          className={cn(
+                            "min-h-[100px] p-1 border-b border-r cursor-pointer hover:bg-muted/50 transition-colors relative",
+                            !isCurrentMonth && "bg-muted/30",
+                            dayIdx === 0 && "border-l"
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "text-sm font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full",
+                              isToday && "bg-primary text-primary-foreground",
+                              dayOfWeek === 0 && !isToday && "text-red-500",
+                              dayOfWeek === 6 && !isToday && "text-blue-500"
+                            )}
+                          >
+                            {format(day, "d")}
+                          </div>
+                          <div className="mt-6 space-y-1">
+                            {singleDayEvents.slice(0, 2).map((event) => (
+                              <div
+                                key={event.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (canEdit) {
+                                    openEditDialog(event);
+                                  }
+                                }}
+                                className="text-xs p-1 rounded truncate cursor-pointer hover:opacity-80"
+                                style={{ backgroundColor: event.color || PASTEL_COLORS[4].value, color: "#333" }}
+                              >
+                                {event.title}
+                              </div>
+                            ))}
+                            {singleDayEvents.length > 2 && (
+                              <div className="text-xs text-muted-foreground text-center">
+                                +{singleDayEvents.length - 2}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="absolute top-8 left-0 right-0 pointer-events-none" style={{ zIndex: 10 }}>
+                    {multiDayEvents.map((event, eventIdx) => (
+                      <div
+                        key={event.id}
+                        className="pointer-events-auto mb-0.5"
+                        style={{
+                          marginLeft: `calc(${event.startCol * (100 / 7)}% + 2px)`,
+                          width: `calc(${event.span * (100 / 7)}% - 4px)`,
+                        }}
+                      >
+                        <div
                           onClick={(e) => {
                             e.stopPropagation();
                             if (canEdit) {
                               openEditDialog(event);
                             }
                           }}
-                          className="text-xs p-1 rounded truncate cursor-pointer hover:opacity-80"
-                          style={{ backgroundColor: event.color || typeInfo.defaultColor, color: "white" }}
+                          className={cn(
+                            "text-xs py-1 px-2 truncate cursor-pointer hover:opacity-80",
+                            event.continuesFromPrev ? "rounded-l-none" : "rounded-l",
+                            event.continuesToNext ? "rounded-r-none" : "rounded-r"
+                          )}
+                          style={{ 
+                            backgroundColor: event.color || PASTEL_COLORS[4].value, 
+                            color: "#333",
+                          }}
                         >
-                          {event.title}
+                          {!event.continuesFromPrev && event.title}
                         </div>
-                      );
-                    })}
-                    {dayEvents.length > 3 && (
-                      <div className="text-xs text-muted-foreground text-center">
-                        +{dayEvents.length - 3} 더 보기
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
               );
@@ -348,8 +446,7 @@ export default function CalendarPage() {
                 })
                 .sort((a, b) => a.startDate.localeCompare(b.startDate))
                 .map((event) => {
-                  const typeInfo = getEventTypeInfo(event.eventType);
-                  const Icon = typeInfo.icon;
+                  const isMultiDay = event.endDate && event.endDate !== event.startDate;
                   return (
                     <div
                       key={event.id}
@@ -358,23 +455,21 @@ export default function CalendarPage() {
                       <div className="flex items-center gap-3">
                         <div
                           className="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: event.color || typeInfo.defaultColor }}
+                          style={{ backgroundColor: event.color || PASTEL_COLORS[4].value }}
                         >
-                          <Icon className="w-5 h-5 text-white" />
+                          <CalendarIcon className="w-5 h-5 text-gray-700" />
                         </div>
                         <div>
                           <div className="font-medium">{event.title}</div>
                           <div className="text-sm text-muted-foreground">
                             {format(parseISO(event.startDate), "M월 d일 (E)", { locale: ko })}
-                            {event.endDate && event.endDate !== event.startDate && (
-                              <> ~ {format(parseISO(event.endDate), "M월 d일 (E)", { locale: ko })}</>
+                            {isMultiDay && (
+                              <> ~ {format(parseISO(event.endDate!), "M월 d일 (E)", { locale: ko })}</>
                             )}
-                            {event.schoolName && <> · {event.schoolName}</>}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{typeInfo.label}</Badge>
                         {canEdit && (
                           <>
                             <Button variant="ghost" size="icon" onClick={() => openEditDialog(event)}>
@@ -403,71 +498,88 @@ export default function CalendarPage() {
           <DialogHeader>
             <DialogTitle>{editingEvent ? "일정 수정" : "일정 추가"}</DialogTitle>
             <DialogDescription>
-              학교 시험, 학교 일정, 학원 일정을 추가할 수 있습니다
+              학원 일정을 등록합니다
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>일정 종류</Label>
-              <Select
-                value={formData.eventType}
-                onValueChange={(v: "school_exam" | "school_event" | "academy_event") =>
-                  setFormData({ ...formData, eventType: v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EVENT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: type.defaultColor }} />
-                        {type.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label>제목 *</Label>
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="예: 중간고사, 체육대회"
+                placeholder="일정 제목을 입력하세요"
               />
             </div>
 
-            {(formData.eventType === "school_exam" || formData.eventType === "school_event") && (
-              <div className="space-y-2">
-                <Label>학교명</Label>
-                <Input
-                  value={formData.schoolName}
-                  onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
-                  placeholder="예: 서울중학교"
-                />
+            <div className="space-y-2">
+              <Label>일정 유형</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={!isRangeEvent ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsRangeEvent(false)}
+                >
+                  하루
+                </Button>
+                <Button
+                  type="button"
+                  variant={isRangeEvent ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsRangeEvent(true)}
+                >
+                  기간
+                </Button>
               </div>
-            )}
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {!isRangeEvent ? (
               <div className="space-y-2">
-                <Label>시작일 *</Label>
+                <Label>날짜 *</Label>
                 <Input
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>종료일</Label>
-                <Input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                />
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>시작일 *</Label>
+                  <Input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>종료일 *</Label>
+                  <Input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>색상</Label>
+              <div className="grid grid-cols-6 gap-2">
+                {PASTEL_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, color: color.value })}
+                    className={cn(
+                      "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
+                      formData.color === color.value ? "border-primary ring-2 ring-primary ring-offset-2" : "border-transparent"
+                    )}
+                    style={{ backgroundColor: color.value }}
+                    title={color.label}
+                  />
+                ))}
               </div>
             </div>
 

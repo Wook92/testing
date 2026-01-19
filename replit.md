@@ -64,12 +64,11 @@ Preferred communication style: Simple, everyday language.
     - Campaign list with edit/delete functionality
     - Validation: budget > 0, endDate >= startDate
 - **Cache Invalidation**: Helper function `invalidateQueriesStartingWith(pathPrefix)` for predicate-based cache invalidation.
-- **Calendar System**: School and academy event management. Features include:
-    - Three event types: 학교 시험 (school exam), 학교 일정 (school event), 학원 일정 (academy event)
+- **Calendar System (학원 캘린더)**: Academy event management. Features include:
     - Monthly calendar view with event display
-    - School name field for school-related events
-    - Multi-day event support with start and end dates
-    - Color-coded events by type
+    - 12 pastel color options for event customization
+    - Single-day and date-range event support
+    - Multi-day events displayed as connected lines across calendar dates
     - CRUD operations for teachers and above
     - Event list view with filtering by current month
 
