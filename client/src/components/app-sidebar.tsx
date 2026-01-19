@@ -84,7 +84,7 @@ const studentMenuItems = [
 const teacherMenuItems = [
   { title: "대시보드", url: "/", icon: Home },
   { title: "투두리스트", url: "/todos", icon: ListTodo },
-  { title: "수업 관리", url: "/timetable", icon: Calendar },
+  { title: "시간표", url: "/timetable", icon: Calendar },
   { title: "학생 관리", url: "/users", icon: Users },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
   { title: "포인트 관리", url: "/points-management", icon: Coins },
@@ -94,7 +94,7 @@ const principalMenuItems = [
   { title: "대시보드", url: "/", icon: Home },
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "사용자 관리", url: "/users", icon: Users },
-  { title: "수업 관리", url: "/timetable", icon: Calendar },
+  { title: "시간표", url: "/timetable", icon: Calendar },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
   { title: "설정", url: "/settings", icon: Settings },
   { title: "포인트 관리", url: "/points-management", icon: Coins },
