@@ -5884,6 +5884,122 @@ export async function registerRoutes(
     }
   });
 
+  // Calendar Events (학원 캘린더)
+  
+  // Get all calendar events
+  app.get("/api/calendar-events", async (req, res) => {
+    try {
+      const events = await storage.getCalendarEvents();
+      res.json(events);
+    } catch (error) {
+      console.error("Get calendar events error:", error);
+      res.status(500).json({ error: "Failed to get calendar events" });
+    }
+  });
+
+  // Get a single calendar event
+  app.get("/api/calendar-events/:id", async (req, res) => {
+    try {
+      const event = await storage.getCalendarEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      res.json(event);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get calendar event" });
+    }
+  });
+
+  // Create a calendar event (teachers and above only)
+  app.post("/api/calendar-events", async (req, res) => {
+    try {
+      const actorId = req.query.actorId as string;
+      if (!actorId) {
+        return res.status(400).json({ error: "Actor ID required" });
+      }
+
+      const actor = await storage.getUser(actorId);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 일정을 추가할 수 있습니다" });
+      }
+
+      const { title, description, eventType, schoolName, startDate, endDate, color } = req.body;
+
+      if (!title || !eventType || !startDate) {
+        return res.status(400).json({ error: "Title, event type, and start date are required" });
+      }
+
+      const event = await storage.createCalendarEvent({
+        title,
+        description,
+        eventType,
+        schoolName,
+        startDate,
+        endDate,
+        color,
+        createdById: actorId,
+      });
+
+      res.status(201).json(event);
+    } catch (error) {
+      console.error("Create calendar event error:", error);
+      res.status(500).json({ error: "Failed to create calendar event" });
+    }
+  });
+
+  // Update a calendar event
+  app.patch("/api/calendar-events/:id", async (req, res) => {
+    try {
+      const actorId = req.query.actorId as string;
+      if (!actorId) {
+        return res.status(400).json({ error: "Actor ID required" });
+      }
+
+      const actor = await storage.getUser(actorId);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 일정을 수정할 수 있습니다" });
+      }
+
+      const { title, description, eventType, schoolName, startDate, endDate, color } = req.body;
+
+      const event = await storage.updateCalendarEvent(req.params.id, {
+        title,
+        description,
+        eventType,
+        schoolName,
+        startDate,
+        endDate,
+        color,
+      });
+
+      res.json(event);
+    } catch (error) {
+      console.error("Update calendar event error:", error);
+      res.status(500).json({ error: "Failed to update calendar event" });
+    }
+  });
+
+  // Delete a calendar event
+  app.delete("/api/calendar-events/:id", async (req, res) => {
+    try {
+      const actorId = req.query.actorId as string;
+      if (!actorId) {
+        return res.status(400).json({ error: "Actor ID required" });
+      }
+
+      const actor = await storage.getUser(actorId);
+      if (!actor || actor.role < UserRole.TEACHER) {
+        return res.status(403).json({ error: "선생님 이상만 일정을 삭제할 수 있습니다" });
+      }
+
+      await storage.deleteCalendarEvent(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete calendar event error:", error);
+      res.status(500).json({ error: "Failed to delete calendar event" });
+    }
+  });
+
   // Todo APIs (투두리스트)
   
   // Get all todos for a center (with optional assignee filter)
