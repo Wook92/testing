@@ -64,6 +64,14 @@ Preferred communication style: Simple, everyday language.
     - Campaign list with edit/delete functionality
     - Validation: budget > 0, endDate >= startDate
 - **Cache Invalidation**: Helper function `invalidateQueriesStartingWith(pathPrefix)` for predicate-based cache invalidation.
+- **Calendar System**: School and academy event management. Features include:
+    - Three event types: 학교 시험 (school exam), 학교 일정 (school event), 학원 일정 (academy event)
+    - Monthly calendar view with event display
+    - School name field for school-related events
+    - Multi-day event support with start and end dates
+    - Color-coded events by type
+    - CRUD operations for teachers and above
+    - Event list view with filtering by current month
 
 ### Route Structure
 - `/` - Dashboard
@@ -79,6 +87,7 @@ Preferred communication style: Simple, everyday language.
 - `/points` - Student points view
 - `/points-management` - Points management (teacher/principal)
 - `/management` - System management (Principal only)
+- `/calendar` - School and academy event calendar
 - `/manual` - User manual and documentation
 
 ### Manual Documentation
