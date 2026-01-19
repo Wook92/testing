@@ -755,20 +755,33 @@ function CreateTodoDialog({ onClose, initialDate, userId, isAdminOrPrincipal, st
           {isAdminOrPrincipal && allAssignees.length > 0 && (
             <div className="space-y-2">
               <Label>해야할 선생님</Label>
-              <div className="flex flex-wrap gap-2 p-2 border rounded-md max-h-32 overflow-y-auto">
-                {allAssignees.map((t) => (
-                  <Badge
-                    key={t.id}
-                    variant={selectedAssignees.includes(t.id) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => toggleAssignee(t.id)}
-                    data-testid={`assignee-${t.id}`}
-                  >
-                    {selectedAssignees.includes(t.id) && <Check className="h-3 w-3 mr-1" />}
-                    {t.name}
-                  </Badge>
-                ))}
-              </div>
+              <Select
+                value={selectedAssignees[0] || ""}
+                onValueChange={(value) => setSelectedAssignees([value])}
+              >
+                <SelectTrigger data-testid="select-assignee">
+                  <SelectValue placeholder="선생님 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allAssignees.map((t) => (
+                    <SelectItem key={t.id} value={t.id} data-testid={`assignee-${t.id}`}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedAssignees.length > 1 && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedAssignees.slice(1).map((id) => {
+                    const teacher = allAssignees.find(t => t.id === id);
+                    return teacher ? (
+                      <Badge key={id} variant="secondary" className="text-xs">
+                        {teacher.name}
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -974,20 +987,21 @@ function EditTodoDialog({ todo, onClose, isAdminOrPrincipal, staff }: EditTodoDi
           {isAdminOrPrincipal && allAssignees.length > 0 && (
             <div className="space-y-2">
               <Label>해야할 선생님</Label>
-              <div className="flex flex-wrap gap-2 p-2 border rounded-md max-h-32 overflow-y-auto">
-                {allAssignees.map((t) => (
-                  <Badge
-                    key={t.id}
-                    variant={selectedAssignees.includes(t.id) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => toggleAssignee(t.id)}
-                    data-testid={`edit-assignee-${t.id}`}
-                  >
-                    {selectedAssignees.includes(t.id) && <Check className="h-3 w-3 mr-1" />}
-                    {t.name}
-                  </Badge>
-                ))}
-              </div>
+              <Select
+                value={selectedAssignees[0] || ""}
+                onValueChange={(value) => setSelectedAssignees([value])}
+              >
+                <SelectTrigger data-testid="select-edit-assignee">
+                  <SelectValue placeholder="선생님 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allAssignees.map((t) => (
+                    <SelectItem key={t.id} value={t.id} data-testid={`edit-assignee-${t.id}`}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
         </div>
