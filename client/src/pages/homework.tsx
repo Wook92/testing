@@ -511,13 +511,6 @@ function InPersonCheckDialog({ homework, submissions, onClose }: {
     },
     onSuccess: () => {
       invalidateQueriesStartingWith("/api/homework");
-      // Force refetch unsubmitted query for any homework
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return Array.isArray(key) && key[0] === "/api/homework" && key[2] === "unsubmitted";
-        },
-      });
       toast({ title: "저장되었습니다" });
       setSavingStudentId(null);
     },
@@ -638,13 +631,6 @@ function ReviewHomeworkDialog({ submission, onClose }: {
     onSuccess: () => {
       console.log("[ReviewHomework] Success!");
       invalidateQueriesStartingWith("/api/homework");
-      // Also invalidate any unsubmitted queries
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return Array.isArray(key) && key[0] === "/api/homework" && key[2] === "unsubmitted";
-        },
-      });
       toast({ title: "검사가 완료되었습니다" });
       onClose();
     },
@@ -760,7 +746,6 @@ export default function HomeworkPage() {
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [calendarCreateDate, setCalendarCreateDate] = useState<string>("");
-  const [unsubmittedHomeworkId, setUnsubmittedHomeworkId] = useState<string | null>(null);
 
   const isTeacherOrAbove = user && user.role >= UserRole.TEACHER;
   const isAdminOrPrincipal = user && user.role >= UserRole.PRINCIPAL;
@@ -799,10 +784,6 @@ export default function HomeworkPage() {
     enabled: isTeacherOrAbove ? !!user : !!user?.id,
   });
 
-  const { data: unsubmittedStudents } = useQuery<any[]>({
-    queryKey: ["/api/homework", unsubmittedHomeworkId, "unsubmitted"],
-    enabled: !!unsubmittedHomeworkId,
-  });
 
   // No auto-selection of teacher for admin/principal - show all teachers by default
 
@@ -1151,7 +1132,7 @@ export default function HomeworkPage() {
               </div>
             ) : isTeacherOrAbove ? (
               <Tabs defaultValue="pending" className="w-full">
-                <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-1">
+                <TabsList className="grid grid-cols-3 w-full h-auto gap-1">
                   <TabsTrigger value="pending" className="text-xs sm:text-sm" data-testid="tab-pending">
                     대기 ({filteredSubmissions.filter((s) => s.status === "submitted").length})
                   </TabsTrigger>
@@ -1160,9 +1141,6 @@ export default function HomeworkPage() {
                   </TabsTrigger>
                   <TabsTrigger value="published" className="text-xs sm:text-sm" data-testid="tab-published">
                     출제됨 ({filteredHomework.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="unsubmitted" className="text-xs sm:text-sm" data-testid="tab-unsubmitted">
-                    미제출
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="pending" className="mt-3 space-y-2">
@@ -1272,54 +1250,6 @@ export default function HomeworkPage() {
                   })}
                   {filteredHomework.length === 0 && (
                     <p className="text-center py-8 text-muted-foreground">출제된 숙제가 없습니다</p>
-                  )}
-                </TabsContent>
-                <TabsContent value="unsubmitted" className="mt-3 space-y-4">
-                  <div className="space-y-2">
-                    <Label>숙제 선택</Label>
-                    <Select value={unsubmittedHomeworkId || ""} onValueChange={(v) => setUnsubmittedHomeworkId(v || null)}>
-                      <SelectTrigger data-testid="select-homework-unsubmitted">
-                        <SelectValue placeholder="숙제를 선택하세요" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[...filteredHomework].sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()).map((hw) => {
-                          const hwClass = classes?.find((c) => c.id === hw.classId);
-                          return (
-                            <SelectItem key={hw.id} value={hw.id}>
-                              {hw.title} {hwClass && `(${hwClass.name})`} - {format(new Date(hw.dueDate), "M/d", { locale: ko })}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {unsubmittedHomeworkId && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">
-                        미제출 학생 ({unsubmittedStudents?.length || 0}명)
-                      </p>
-                      {unsubmittedStudents && unsubmittedStudents.length > 0 ? (
-                        <div className="space-y-2">
-                          {unsubmittedStudents.map((student: any) => (
-                            <div
-                              key={student.id}
-                              className="p-3 rounded-md bg-muted/50"
-                              data-testid={`unsubmitted-student-${student.id}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{student.name}</span>
-                                <Badge variant="destructive">미제출</Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : unsubmittedStudents?.length === 0 ? (
-                        <p className="text-center py-4 text-muted-foreground">모든 학생이 제출했습니다</p>
-                      ) : null}
-                    </div>
-                  )}
-                  {!unsubmittedHomeworkId && (
-                    <p className="text-center py-8 text-muted-foreground">숙제를 선택하면 미제출 학생 목록이 표시됩니다</p>
                   )}
                 </TabsContent>
               </Tabs>
