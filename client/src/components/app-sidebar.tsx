@@ -94,8 +94,8 @@ const principalMenuItems = [
   { title: "대시보드", url: "/", icon: Home },
   { title: "투두리스트", url: "/todos", icon: ListTodo },
   { title: "사용자 관리", url: "/users", icon: Users },
-  { title: "시간표", url: "/timetable", icon: Calendar },
   { title: "포인트 관리", url: "/points-management", icon: Coins },
+  { title: "시간표", url: "/timetable", icon: Calendar },
   { title: "설정", url: "/settings", icon: Settings },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
