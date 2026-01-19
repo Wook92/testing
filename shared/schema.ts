@@ -1670,5 +1670,40 @@ export const insertAnnouncementSchema = createInsertSchema(announcements).pick({
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type Announcement = typeof announcements.$inferSelect;
 
+// Calendar Events (학원 캘린더)
+export const CalendarEventType = {
+  SCHOOL_EXAM: "school_exam",     // 학교 시험일정
+  SCHOOL_EVENT: "school_event",   // 학교일정
+  ACADEMY_EVENT: "academy_event", // 학원일정
+} as const;
+export type CalendarEventTypeValue = typeof CalendarEventType[keyof typeof CalendarEventType];
+
+export const calendarEvents = pgTable("calendar_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description"),
+  eventType: text("event_type").notNull(), // school_exam, school_event, academy_event
+  schoolName: text("school_name"), // 학교명 (for school events)
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"), // optional, for multi-day events
+  color: text("color"), // optional custom color
+  createdById: varchar("created_by_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).pick({
+  title: true,
+  description: true,
+  eventType: true,
+  schoolName: true,
+  startDate: true,
+  endDate: true,
+  color: true,
+  createdById: true,
+});
+export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+
 // Re-export chat models for OpenAI integration
 export * from "./models/chat";
