@@ -25,7 +25,7 @@ export default function PointsManagementPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isUseDialogOpen, setIsUseDialogOpen] = useState(false);
 
-  const { data: students, isLoading } = useQuery({
+  const { data: students, isLoading } = useQuery<any[]>({
     queryKey: [`/api/students/with-points?actorId=${user?.id}`],
     enabled: !!user,
   });
