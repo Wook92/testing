@@ -257,16 +257,22 @@ export interface IStorage {
 
   // Attendance System (출결 시스템)
   getAttendancePinByPin(centerId: string, pin: string): Promise<AttendancePinWithStudent | undefined>;
+  getAttendancePinByPinGlobal(pin: string): Promise<AttendancePinWithStudent | undefined>;
   getAttendancePins(centerId: string): Promise<AttendancePinWithStudent[]>;
+  getAllAttendancePins(): Promise<AttendancePinWithStudent[]>;
   getAttendancePinByStudent(studentId: string, centerId: string): Promise<AttendancePin | undefined>;
+  getAttendancePinByStudentGlobal(studentId: string): Promise<AttendancePin | undefined>;
   createAttendancePin(data: InsertAttendancePin): Promise<AttendancePin>;
   updateAttendancePin(id: string, data: Partial<InsertAttendancePin>): Promise<AttendancePin>;
   deleteAttendancePin(id: string): Promise<void>;
 
   // Teacher Check-in Settings (선생님 출근 설정)
   getTeacherCheckInSettings(teacherId: string, centerId: string): Promise<TeacherCheckInSettings | undefined>;
+  getTeacherCheckInSettingsByTeacher(teacherId: string): Promise<TeacherCheckInSettings | undefined>;
   getTeacherCheckInSettingsByCode(centerId: string, code: string): Promise<(TeacherCheckInSettings & { teacher?: User }) | undefined>;
+  getTeacherCheckInSettingsByCodeGlobal(code: string): Promise<(TeacherCheckInSettings & { teacher?: User }) | undefined>;
   getAllTeacherCheckInSettings(centerId: string): Promise<TeacherCheckInSettings[]>;
+  getAllTeacherCheckInSettingsGlobal(): Promise<TeacherCheckInSettings[]>;
   createTeacherCheckInSettings(data: InsertTeacherCheckInSettings): Promise<TeacherCheckInSettings>;
   updateTeacherCheckInSettings(id: string, data: Partial<InsertTeacherCheckInSettings>): Promise<TeacherCheckInSettings>;
   deleteTeacherCheckInSettings(id: string): Promise<void>;
@@ -1754,12 +1760,41 @@ export class DatabaseStorage implements IStorage {
     return pins.map(p => ({ ...p, student: studentsMap.get(p.studentId) }));
   }
 
+  async getAllAttendancePins(): Promise<AttendancePinWithStudent[]> {
+    const pins = await db.select().from(attendancePins);
+    const studentsMap = new Map<string, User>();
+    const studentIds = Array.from(new Set(pins.map(p => p.studentId)));
+    if (studentIds.length > 0) {
+      const studentList = await db.select().from(users).where(inArray(users.id, studentIds));
+      studentList.forEach(s => studentsMap.set(s.id, s));
+    }
+    return pins.map(p => ({ ...p, student: studentsMap.get(p.studentId) }));
+  }
+
+  async getAttendancePinByPinGlobal(pin: string): Promise<AttendancePinWithStudent | undefined> {
+    const result = await db.select().from(attendancePins)
+      .where(and(
+        eq(attendancePins.pin, pin),
+        eq(attendancePins.isActive, true)
+      ));
+    if (result.length === 0) return undefined;
+    const pinRecord = result[0];
+    const student = await this.getUser(pinRecord.studentId);
+    return { ...pinRecord, student };
+  }
+
   async getAttendancePinByStudent(studentId: string, centerId: string): Promise<AttendancePin | undefined> {
     const result = await db.select().from(attendancePins)
       .where(and(
         eq(attendancePins.studentId, studentId),
         eq(attendancePins.centerId, centerId)
       ));
+    return result[0];
+  }
+
+  async getAttendancePinByStudentGlobal(studentId: string): Promise<AttendancePin | undefined> {
+    const result = await db.select().from(attendancePins)
+      .where(eq(attendancePins.studentId, studentId));
     return result[0];
   }
 
@@ -1803,6 +1838,28 @@ export class DatabaseStorage implements IStorage {
   async getAllTeacherCheckInSettings(centerId: string): Promise<TeacherCheckInSettings[]> {
     return await db.select().from(teacherCheckInSettings)
       .where(eq(teacherCheckInSettings.centerId, centerId));
+  }
+
+  async getAllTeacherCheckInSettingsGlobal(): Promise<TeacherCheckInSettings[]> {
+    return await db.select().from(teacherCheckInSettings);
+  }
+
+  async getTeacherCheckInSettingsByTeacher(teacherId: string): Promise<TeacherCheckInSettings | undefined> {
+    const result = await db.select().from(teacherCheckInSettings)
+      .where(eq(teacherCheckInSettings.teacherId, teacherId));
+    return result[0];
+  }
+
+  async getTeacherCheckInSettingsByCodeGlobal(code: string): Promise<(TeacherCheckInSettings & { teacher?: User }) | undefined> {
+    const result = await db.select().from(teacherCheckInSettings)
+      .where(and(
+        eq(teacherCheckInSettings.checkInCode, code),
+        eq(teacherCheckInSettings.isActive, true)
+      ));
+    if (result.length === 0) return undefined;
+    const settings = result[0];
+    const teacherResult = await db.select().from(users).where(eq(users.id, settings.teacherId));
+    return { ...settings, teacher: teacherResult[0] };
   }
 
   async createTeacherCheckInSettings(data: InsertTeacherCheckInSettings): Promise<TeacherCheckInSettings> {

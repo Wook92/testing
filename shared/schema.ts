@@ -74,12 +74,11 @@ export type User = typeof users.$inferSelect;
 export const userCenters = pgTable("user_centers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
 });
 
 export const insertUserCenterSchema = createInsertSchema(userCenters).pick({
   userId: true,
-  centerId: true,
 });
 export type InsertUserCenter = z.infer<typeof insertUserCenterSchema>;
 export type UserCenter = typeof userCenters.$inferSelect;
@@ -290,7 +289,7 @@ export const clinicStudents = pgTable("clinic_students", {
   studentId: varchar("student_id").notNull(), // FK to users
   regularTeacherId: varchar("regular_teacher_id").notNull(), // 담당 선생님
   clinicTeacherId: varchar("clinic_teacher_id"), // 클리닉 선생님 (can be null)
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   clinicType: text("clinic_type").notNull().default("middle"), // 클리닉 유형: "high" (고등) | "middle" (중등)
   grade: text("grade"), // 학년 (예: 초1, 초2, 중1, 중2, 고1, 고2, 고3)
   classGroup: text("class_group"), // 반 (예: A반, B반) - 미등록이면 null
@@ -305,7 +304,6 @@ export const insertClinicStudentSchema = createInsertSchema(clinicStudents).pick
   studentId: true,
   regularTeacherId: true,
   clinicTeacherId: true,
-  centerId: true,
   clinicType: true,
   grade: true,
   classGroup: true,
@@ -426,7 +424,7 @@ export type ClinicWeeklyRecordWithFiles = ClinicWeeklyRecord & {
 // Clinic Shared Instruction Groups (공통 지시사항 그룹) - Groups of students sharing same instructions
 export const clinicSharedInstructionGroups = pgTable("clinic_shared_instruction_groups", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   teacherId: varchar("teacher_id").notNull(), // 담당선생님
   weekStartDate: date("week_start_date").notNull(), // 주 시작일
   period: text("period").notNull(), // weekly_evaluation | period2 | period3
@@ -437,7 +435,6 @@ export const clinicSharedInstructionGroups = pgTable("clinic_shared_instruction_
 });
 
 export const insertClinicSharedInstructionGroupSchema = createInsertSchema(clinicSharedInstructionGroups).pick({
-  centerId: true,
   teacherId: true,
   weekStartDate: true,
   period: true,
@@ -470,7 +467,7 @@ export type ClinicSharedInstructionGroupWithMembers = ClinicSharedInstructionGro
 // Clinic Resources (클리닉 자료 모음) - Shared problem files for clinic students
 export const clinicResources = pgTable("clinic_resources", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   fileName: text("file_name").notNull(),
   filePath: text("file_path").notNull(),
   description: text("description"), // 자료 설명
@@ -481,7 +478,6 @@ export const clinicResources = pgTable("clinic_resources", {
 });
 
 export const insertClinicResourceSchema = createInsertSchema(clinicResources).pick({
-  centerId: true,
   fileName: true,
   filePath: true,
   description: true,
@@ -522,7 +518,7 @@ export const clinicAssignments = pgTable("clinic_assignments", {
   studentId: varchar("student_id").notNull(),
   regularTeacherId: varchar("regular_teacher_id").notNull(), // 정규 선생님 (작성자)
   clinicTeacherId: varchar("clinic_teacher_id"), // 클리닉 선생님 (수행자) - null if self
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   assignmentDate: date("assignment_date").notNull(),
   title: text("title").notNull(),
   description: text("description"), // 전체 설명
@@ -535,7 +531,6 @@ export const insertClinicAssignmentSchema = createInsertSchema(clinicAssignments
   studentId: true,
   regularTeacherId: true,
   clinicTeacherId: true,
-  centerId: true,
   assignmentDate: true,
   title: true,
   description: true,
@@ -634,7 +629,7 @@ export type ClinicProgressLog = typeof clinicProgressLogs.$inferSelect;
 export const attendancePins = pgTable("attendance_pins", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   pin: text("pin").notNull(), // 4-6 digit PIN (e.g., "1234")
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -642,7 +637,6 @@ export const attendancePins = pgTable("attendance_pins", {
 
 export const insertAttendancePinSchema = createInsertSchema(attendancePins).pick({
   studentId: true,
-  centerId: true,
   pin: true,
   isActive: true,
 });
@@ -653,7 +647,7 @@ export type AttendancePin = typeof attendancePins.$inferSelect;
 export const teacherCheckInSettings = pgTable("teacher_check_in_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teacherId: varchar("teacher_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   checkInCode: text("check_in_code").notNull(), // 4-digit check-in code
   smsRecipient1: text("sms_recipient_1"), // First phone number to receive SMS
   smsRecipient2: text("sms_recipient_2"), // Second phone number to receive SMS (optional)
@@ -665,7 +659,6 @@ export const teacherCheckInSettings = pgTable("teacher_check_in_settings", {
 
 export const insertTeacherCheckInSettingsSchema = createInsertSchema(teacherCheckInSettings).pick({
   teacherId: true,
-  centerId: true,
   checkInCode: true,
   smsRecipient1: true,
   smsRecipient2: true,
@@ -688,7 +681,7 @@ export type AttendanceStatus = typeof ATTENDANCE_STATUS[keyof typeof ATTENDANCE_
 export const attendanceRecords = pgTable("attendance_records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   classId: varchar("class_id"), // Optional: which class the student is checking in for
   checkInAt: timestamp("check_in_at").notNull().defaultNow(),
   checkInDate: date("check_in_date").notNull(), // For easy date filtering
@@ -703,7 +696,6 @@ export const attendanceRecords = pgTable("attendance_records", {
 
 export const insertAttendanceRecordSchema = createInsertSchema(attendanceRecords).pick({
   studentId: true,
-  centerId: true,
   classId: true,
   checkInDate: true,
   wasLate: true,
@@ -716,7 +708,7 @@ export type AttendanceRecord = typeof attendanceRecords.$inferSelect;
 export const teacherWorkRecords = pgTable("teacher_work_records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teacherId: varchar("teacher_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   workDate: date("work_date").notNull(), // 근무일 (YYYY-MM-DD)
   checkInAt: timestamp("check_in_at"), // 출근 시각
   checkOutAt: timestamp("check_out_at"), // 퇴근 시각
@@ -728,7 +720,6 @@ export const teacherWorkRecords = pgTable("teacher_work_records", {
 
 export const insertTeacherWorkRecordSchema = createInsertSchema(teacherWorkRecords).pick({
   teacherId: true,
-  centerId: true,
   workDate: true,
   checkInAt: true,
   checkOutAt: true,
@@ -741,7 +732,7 @@ export type TeacherWorkRecord = typeof teacherWorkRecords.$inferSelect;
 // Message Templates (알림 메시지 템플릿)
 export const messageTemplates = pgTable("message_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   type: text("type").notNull(), // 'check_in' | 'late' | 'check_out'
   title: text("title").notNull(),
   body: text("body").notNull(), // Supports variables like {{studentName}}, {{time}}, {{date}}
@@ -751,7 +742,6 @@ export const messageTemplates = pgTable("message_templates", {
 });
 
 export const insertMessageTemplateSchema = createInsertSchema(messageTemplates).pick({
-  centerId: true,
   type: true,
   title: true,
   body: true,
@@ -857,7 +847,7 @@ export type StudentClassNoteWithDetails = StudentClassNote & { student?: User; t
 // SOLAPI Credentials (센터별 SMS/카카오톡 설정)
 export const solapiCredentials = pgTable("solapi_credentials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull().unique(),
+  centerId: varchar("center_id").unique(),
   apiKey: text("api_key").notNull(),           // encrypted
   apiSecret: text("api_secret").notNull(),     // encrypted
   senderNumber: text("sender_number").notNull(), // plaintext phone number
@@ -865,10 +855,11 @@ export const solapiCredentials = pgTable("solapi_credentials", {
 });
 
 export const insertSolapiCredentialsSchema = createInsertSchema(solapiCredentials).pick({
-  centerId: true,
   apiKey: true,
   apiSecret: true,
   senderNumber: true,
+}).extend({
+  centerId: z.string().nullable().optional(),
 });
 export type InsertSolapiCredentials = z.infer<typeof insertSolapiCredentialsSchema>;
 export type SolapiCredentials = typeof solapiCredentials.$inferSelect;
@@ -876,7 +867,7 @@ export type SolapiCredentials = typeof solapiCredentials.$inferSelect;
 // Study Cafe Settings (스터디카페 센터 설정)
 export const studyCafeSettings = pgTable("study_cafe_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull().unique(),
+  centerId: varchar("center_id").unique(),
   isEnabled: boolean("is_enabled").notNull().default(false),
   notice: text("notice"), // 공지사항
   entryPassword: text("entry_password"), // 출입 비밀번호
@@ -884,9 +875,9 @@ export const studyCafeSettings = pgTable("study_cafe_settings", {
 });
 
 export const insertStudyCafeSettingsSchema = createInsertSchema(studyCafeSettings).pick({
-  centerId: true,
   isEnabled: true,
 }).extend({
+  centerId: z.string().nullable().optional(),
   notice: z.string().nullable().optional(),
   entryPassword: z.string().nullable().optional(),
 });
@@ -896,7 +887,7 @@ export type StudyCafeSettings = typeof studyCafeSettings.$inferSelect;
 // Study Cafe Seats (스터디카페 좌석)
 export const studyCafeSeats = pgTable("study_cafe_seats", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   seatNumber: integer("seat_number").notNull(),
   row: integer("row").notNull(), // 행 (위치 정보)
   col: integer("col").notNull(), // 열 (위치 정보)
@@ -904,11 +895,12 @@ export const studyCafeSeats = pgTable("study_cafe_seats", {
 });
 
 export const insertStudyCafeSeatSchema = createInsertSchema(studyCafeSeats).pick({
-  centerId: true,
   seatNumber: true,
   row: true,
   col: true,
   isActive: true,
+}).extend({
+  centerId: z.string().nullable().optional(),
 });
 export type InsertStudyCafeSeat = z.infer<typeof insertStudyCafeSeatSchema>;
 export type StudyCafeSeat = typeof studyCafeSeats.$inferSelect;
@@ -918,7 +910,7 @@ export const studyCafeReservations = pgTable("study_cafe_reservations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   seatId: varchar("seat_id").notNull(),
   studentId: varchar("student_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   startAt: timestamp("start_at").notNull(),
   endAt: timestamp("end_at").notNull(), // startAt + 2시간
   status: text("status").notNull().default("active"), // active, released, expired
@@ -928,7 +920,6 @@ export const studyCafeReservations = pgTable("study_cafe_reservations", {
 export const insertStudyCafeReservationSchema = createInsertSchema(studyCafeReservations).pick({
   seatId: true,
   studentId: true,
-  centerId: true,
   startAt: true,
   endAt: true,
   status: true,
@@ -941,7 +932,7 @@ export const studyCafeFixedSeats = pgTable("study_cafe_fixed_seats", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   seatId: varchar("seat_id").notNull(),
   studentId: varchar("student_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   assignedById: varchar("assigned_by_id").notNull(), // 지정한 사람 (선생님/원장/관리자)
@@ -951,7 +942,6 @@ export const studyCafeFixedSeats = pgTable("study_cafe_fixed_seats", {
 export const insertStudyCafeFixedSeatSchema = createInsertSchema(studyCafeFixedSeats).pick({
   seatId: true,
   studentId: true,
-  centerId: true,
   startDate: true,
   endDate: true,
   assignedById: true,
@@ -989,14 +979,13 @@ export type TuitionAccessPassword = typeof tuitionAccessPasswords.$inferSelect;
 // Per-center guidance text and images that students/parents can view
 export const tuitionGuidances = pgTable("tuition_guidances", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull().unique(),
+  centerId: varchar("center_id").unique(),
   guidanceText: text("guidance_text"),
   imageUrls: text("image_urls").array().default([]),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertTuitionGuidanceSchema = createInsertSchema(tuitionGuidances).pick({
-  centerId: true,
   guidanceText: true,
   imageUrls: true,
 });
@@ -1018,7 +1007,7 @@ export const tuitionNotifications = pgTable("tuition_notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull(),
   parentId: varchar("parent_id"), // The parent who received the notification (optional, may use phone from student)
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   sentById: varchar("sent_by_id").notNull(), // The principal/admin who sent it
   
   // Fee details
@@ -1045,7 +1034,6 @@ export const tuitionNotifications = pgTable("tuition_notifications", {
 export const insertTuitionNotificationSchema = createInsertSchema(tuitionNotifications).pick({
   studentId: true,
   parentId: true,
-  centerId: true,
   sentById: true,
   calculatedTotal: true,
   sentAmount: true,
@@ -1066,7 +1054,7 @@ export type TuitionNotification = typeof tuitionNotifications.$inferSelect;
 export const studentTextbookPurchases = pgTable("student_textbook_purchases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   textbookName: varchar("textbook_name").notNull(),
   price: integer("price").notNull().default(0),
   purchaseDate: timestamp("purchase_date").defaultNow(),
@@ -1077,7 +1065,6 @@ export const studentTextbookPurchases = pgTable("student_textbook_purchases", {
 
 export const insertStudentTextbookPurchaseSchema = createInsertSchema(studentTextbookPurchases).pick({
   studentId: true,
-  centerId: true,
   textbookName: true,
   price: true,
   purchaseDate: true,
@@ -1092,7 +1079,7 @@ export type StudentTextbookPurchase = typeof studentTextbookPurchases.$inferSele
 export const studentMonthlyReports = pgTable("student_monthly_reports", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   createdById: varchar("created_by_id").notNull(), // Teacher/admin who created/edited
   
   // Report period
@@ -1122,7 +1109,6 @@ export const studentMonthlyReports = pgTable("student_monthly_reports", {
 
 export const insertStudentMonthlyReportSchema = createInsertSchema(studentMonthlyReports).pick({
   studentId: true,
-  centerId: true,
   createdById: true,
   year: true,
   month: true,
@@ -1178,7 +1164,7 @@ export type SystemSetting = typeof systemSettings.$inferSelect;
 // Todos (투두리스트)
 export const todos = pgTable("todos", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   creatorId: varchar("creator_id").notNull(), // 생성자 (Admin/Principal/Teacher)
   title: text("title").notNull(), // 할일 제목
   description: text("description"), // 상세 설명
@@ -1193,7 +1179,6 @@ export const todos = pgTable("todos", {
 });
 
 export const insertTodoSchema = createInsertSchema(todos).pick({
-  centerId: true,
   creatorId: true,
   title: true,
   description: true,
@@ -1263,7 +1248,7 @@ export const studentExitRecords = pgTable("student_exit_records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   studentId: varchar("student_id").notNull(), // 퇴원 학생 ID
   studentName: text("student_name").notNull(), // 퇴원 시점 학생 이름 (스냅샷)
-  centerId: varchar("center_id").notNull(), // 센터 ID
+  centerId: varchar("center_id"), // 센터 ID
   exitMonth: text("exit_month").notNull(), // 퇴원 월 (YYYY-MM 형식)
   reasons: text("reasons").array().notNull(), // 퇴원 사유 배열
   notes: text("notes"), // 추가 메모
@@ -1274,7 +1259,6 @@ export const studentExitRecords = pgTable("student_exit_records", {
 export const insertStudentExitRecordSchema = createInsertSchema(studentExitRecords).pick({
   studentId: true,
   studentName: true,
-  centerId: true,
   exitMonth: true,
   reasons: true,
   notes: true,
@@ -1286,14 +1270,13 @@ export type StudentExitRecord = typeof studentExitRecords.$inferSelect;
 // Monthly student count snapshot for management dashboard
 export const monthlyStudentSnapshots = pgTable("monthly_student_snapshots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   month: text("month").notNull(), // YYYY-MM 형식
   studentCount: integer("student_count").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertMonthlyStudentSnapshotSchema = createInsertSchema(monthlyStudentSnapshots).pick({
-  centerId: true,
   month: true,
   studentCount: true,
 });
@@ -1325,7 +1308,7 @@ export const MARKETING_CHANNEL_LIST = Object.entries(MarketingChannels).map(([ke
 
 export const marketingCampaigns = pgTable("marketing_campaigns", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   name: text("name").notNull(),
   channel: text("channel").notNull(),
   startDate: date("start_date").notNull(),
@@ -1337,7 +1320,6 @@ export const marketingCampaigns = pgTable("marketing_campaigns", {
 });
 
 export const insertMarketingCampaignSchema = createInsertSchema(marketingCampaigns).pick({
-  centerId: true,
   name: true,
   channel: true,
   startDate: true,
@@ -1353,7 +1335,7 @@ export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
 // Each category has an amount and optional notes/details in JSON format
 export const monthlyFinancialRecords = pgTable("monthly_financial_records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   yearMonth: text("year_month").notNull(), // YYYY-MM format
   
   // 매출 (Revenue)
@@ -1512,7 +1494,7 @@ export const FinancialExpenseCategories = {
 export const teacherSalarySettings = pgTable("teacher_salary_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teacherId: varchar("teacher_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   baseSalary: integer("base_salary").notNull().default(0), // 기본급 (월)
   classBasePay: integer("class_base_pay").notNull().default(0), // 수업당 기본급 (중등) - legacy, kept for backwards compatibility
   classBasePayMiddle: integer("class_base_pay_middle").notNull().default(0), // 중등 수업당 기본급
@@ -1531,7 +1513,6 @@ export const teacherSalarySettings = pgTable("teacher_salary_settings", {
 
 export const insertTeacherSalarySettingsSchema = createInsertSchema(teacherSalarySettings).pick({
   teacherId: true,
-  centerId: true,
   baseSalary: true,
   classBasePay: true,
   classBasePayMiddle: true,
@@ -1550,7 +1531,7 @@ export type TeacherSalarySettings = typeof teacherSalarySettings.$inferSelect;
 export const teacherSalaryAdjustments = pgTable("teacher_salary_adjustments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   teacherId: varchar("teacher_id").notNull(),
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"),
   yearMonth: varchar("year_month", { length: 7 }).notNull(), // YYYY-MM 형식
   amount: integer("amount").notNull(), // 양수: 추가, 음수: 차감
   description: text("description").notNull(), // 조정 사유
@@ -1560,7 +1541,6 @@ export const teacherSalaryAdjustments = pgTable("teacher_salary_adjustments", {
 
 export const insertTeacherSalaryAdjustmentSchema = createInsertSchema(teacherSalaryAdjustments).pick({
   teacherId: true,
-  centerId: true,
   yearMonth: true,
   amount: true,
   description: true,

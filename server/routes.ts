@@ -234,7 +234,7 @@ export async function registerRoutes(
         subject: "수학",
         classType: "regular",
         teacherId: teacher1.id,
-        centerId: dmcCenter.id,
+        
         classroom: "A101",
         days: ["mon", "wed", "fri"],
         startTime: "14:00",
@@ -247,7 +247,7 @@ export async function registerRoutes(
         subject: "영어",
         classType: "regular",
         teacherId: teacher1.id,
-        centerId: dmcCenter.id,
+        
         classroom: "B202",
         days: ["tue", "thu"],
         startTime: "16:00",
@@ -260,7 +260,7 @@ export async function registerRoutes(
         subject: "수학",
         classType: "assessment",
         teacherId: teacher1.id,
-        centerId: dmcCenter.id,
+        
         classroom: "A101",
         days: ["sat"],
         startTime: "10:00",
@@ -277,7 +277,7 @@ export async function registerRoutes(
           subject: "심화반",
           classType: "regular",
           teacherId: teacher2.id,
-          centerId: mokdongCenter.id,
+          
           classroom: "101호",
           days: ["mon", "wed"],
           startTime: "15:00",
@@ -415,16 +415,9 @@ export async function registerRoutes(
       
       const user = await storage.createUser(normalizedUserData);
       
-      // Support both single centerId and multiple centerIds
-      const centersToAdd = centerIds || (centerId ? [centerId] : []);
-      for (const cId of centersToAdd) {
-        await storage.addUserToCenter({ userId: user.id, centerId: cId });
-      }
-      
       // Create attendance PIN for students
-      if (userData.role === 1 && centersToAdd.length > 0) {
-        const primaryCenterId = centersToAdd[0];
-        const existingPins = await storage.getAttendancePins(primaryCenterId);
+      if (userData.role === 1) {
+        const existingPins = await storage.getAllAttendancePins();
         const usedPins = existingPins.map((p: any) => p.pin);
         
         let pin = attendancePin;
@@ -442,7 +435,7 @@ export async function registerRoutes(
         }
         
         if (pin) {
-          await storage.createAttendancePin({ studentId: user.id, centerId: primaryCenterId, pin });
+          await storage.createAttendancePin({ studentId: user.id, pin });
         }
       }
       
@@ -450,16 +443,16 @@ export async function registerRoutes(
       const teacherCheckInSettings = req.body.teacherCheckInSettings;
       if (teacherCheckInSettings && Array.isArray(teacherCheckInSettings) && (userData.role === 2 || userData.role === 3)) {
         for (const setting of teacherCheckInSettings) {
-          const { centerId, checkInCode, smsRecipient1, smsRecipient2 } = setting;
-          if (centerId && checkInCode) {
+          const { checkInCode, smsRecipient1, smsRecipient2 } = setting;
+          if (checkInCode) {
             // Validate check-in code uniqueness (against student PINs and other teacher codes)
-            const existingPins = await storage.getAttendancePins(centerId);
+            const existingPins = await storage.getAllAttendancePins();
             if (existingPins.some((p: any) => p.pin === checkInCode)) {
               await storage.deleteUser(user.id);
               return res.status(400).json({ error: `출근코드 ${checkInCode}가 학생 출결번호와 중복됩니다` });
             }
             
-            const existingTeacherSettings = await storage.getAllTeacherCheckInSettings(centerId);
+            const existingTeacherSettings = await storage.getAllTeacherCheckInSettingsGlobal();
             if (existingTeacherSettings.some((s: any) => s.checkInCode === checkInCode)) {
               await storage.deleteUser(user.id);
               return res.status(400).json({ error: `출근코드 ${checkInCode}가 다른 선생님과 중복됩니다` });
@@ -467,7 +460,6 @@ export async function registerRoutes(
             
             await storage.createTeacherCheckInSettings({
               teacherId: user.id,
-              centerId,
               checkInCode,
               smsRecipient1: smsRecipient1 || null,
               smsRecipient2: smsRecipient2 || null,
@@ -479,11 +471,9 @@ export async function registerRoutes(
       
       // Create teacher salary settings if provided (for regular/part-time teachers)
       const salarySettings = req.body.salarySettings;
-      if (salarySettings && userData.role === 2 && centersToAdd.length > 0) {
-        const primaryCenterId = centersToAdd[0];
+      if (salarySettings && userData.role === 2) {
         await storage.createTeacherSalarySettings({
           teacherId: user.id,
-          centerId: primaryCenterId,
           baseSalary: salarySettings.baseSalary || 0,
           classBasePay: 0, // legacy field
           classBasePayMiddle: salarySettings.classBasePayMiddle || 0,
@@ -512,44 +502,25 @@ export async function registerRoutes(
       // Update basic user info
       const updatedUser = await storage.updateUser(userId, userData);
       
-      // Update center associations if provided
-      if (centerIds && Array.isArray(centerIds)) {
-        // Remove existing center associations
-        const existingCenters = await storage.getUserCenters(userId);
-        for (const center of existingCenters) {
-          await storage.removeUserFromCenter(userId, center.id);
-        }
-        // Add new center associations
-        for (const centerId of centerIds) {
-          await storage.addUserToCenter({ userId, centerId });
-        }
-      }
-      
       // Update attendance PIN if provided (for students)
-      // Check the updated user's role, not the request body role
       if (attendancePin && updatedUser.role === 1) {
         console.log("[UPDATE-PIN] Updating attendance PIN for user:", userId, "new PIN:", attendancePin);
-        const userCenters = await storage.getUserCenters(userId);
-        console.log("[UPDATE-PIN] User centers:", userCenters.length);
-        if (userCenters.length > 0) {
-          const primaryCenterId = userCenters[0].id;
-          // Check if PIN is unique
-          const existingPins = await storage.getAttendancePins(primaryCenterId);
-          const usedPins = existingPins.filter((p: any) => p.studentId !== userId).map((p: any) => p.pin);
-          
-          if (usedPins.includes(attendancePin)) {
-            return res.status(400).json({ error: "이미 사용 중인 출결번호입니다" });
-          }
-          
-          // Delete existing PIN and create new one
-          const existingStudentPin = await storage.getAttendancePinByStudent(userId, primaryCenterId);
-          if (existingStudentPin) {
-            console.log("[UPDATE-PIN] Deleting existing PIN:", existingStudentPin.id);
-            await storage.deleteAttendancePin(existingStudentPin.id);
-          }
-          await storage.createAttendancePin({ studentId: userId, centerId: primaryCenterId, pin: attendancePin });
-          console.log("[UPDATE-PIN] New PIN created successfully");
+        // Check if PIN is unique
+        const existingPins = await storage.getAllAttendancePins();
+        const usedPins = existingPins.filter((p: any) => p.studentId !== userId).map((p: any) => p.pin);
+        
+        if (usedPins.includes(attendancePin)) {
+          return res.status(400).json({ error: "이미 사용 중인 출결번호입니다" });
         }
+        
+        // Delete existing PIN and create new one
+        const existingStudentPin = await storage.getAttendancePinByStudentGlobal(userId);
+        if (existingStudentPin) {
+          console.log("[UPDATE-PIN] Deleting existing PIN:", existingStudentPin.id);
+          await storage.deleteAttendancePin(existingStudentPin.id);
+        }
+        await storage.createAttendancePin({ studentId: userId, pin: attendancePin });
+        console.log("[UPDATE-PIN] New PIN created successfully");
       }
       
       // Update teacher check-in settings if provided (for teachers)
@@ -557,9 +528,9 @@ export async function registerRoutes(
           (updatedUser.role === 2 || updatedUser.role === 3 || updatedUser.role === 4)) {
         console.log("[UPDATE-TEACHER-CHECKIN] Processing teacher check-in settings for user:", userId);
         for (const setting of teacherCheckInSettingsData) {
-          const { centerId, checkInCode, smsRecipient1, smsRecipient2 } = setting;
+          const { checkInCode, smsRecipient1, smsRecipient2 } = setting;
           
-          if (!centerId || !checkInCode) {
+          if (!checkInCode) {
             continue;
           }
           
@@ -569,13 +540,13 @@ export async function registerRoutes(
           }
           
           // Check if code is already used by another teacher
-          const existingSettings = await storage.getTeacherCheckInSettingsByCode(centerId, checkInCode);
+          const existingSettings = await storage.getTeacherCheckInSettingsByCodeGlobal(checkInCode);
           if (existingSettings && existingSettings.teacherId !== userId) {
             return res.status(400).json({ error: `출근코드 ${checkInCode}가 다른 선생님과 중복됩니다` });
           }
           
-          // Check if this teacher already has settings for this center
-          const currentSettings = await storage.getTeacherCheckInSettings(userId, centerId);
+          // Check if this teacher already has settings
+          const currentSettings = await storage.getTeacherCheckInSettingsByTeacher(userId);
           if (currentSettings) {
             // Update existing settings
             await storage.updateTeacherCheckInSettings(currentSettings.id, {
@@ -583,18 +554,17 @@ export async function registerRoutes(
               smsRecipient1: smsRecipient1 || null,
               smsRecipient2: smsRecipient2 || null,
             });
-            console.log("[UPDATE-TEACHER-CHECKIN] Updated settings for center:", centerId);
+            console.log("[UPDATE-TEACHER-CHECKIN] Updated settings");
           } else {
             // Create new settings
             await storage.createTeacherCheckInSettings({
               teacherId: userId,
-              centerId,
               checkInCode,
               smsRecipient1: smsRecipient1 || null,
               smsRecipient2: smsRecipient2 || null,
               isActive: true,
             });
-            console.log("[UPDATE-TEACHER-CHECKIN] Created new settings for center:", centerId);
+            console.log("[UPDATE-TEACHER-CHECKIN] Created new settings");
           }
         }
       }
@@ -1156,7 +1126,7 @@ export async function registerRoutes(
       const encryptedApiSecret = encrypt(apiSecret);
       
       const credentials = await storage.upsertSolapiCredentials({
-        centerId: req.params.centerId,
+        
         apiKey: encryptedApiKey,
         apiSecret: encryptedApiSecret,
         senderNumber,
@@ -1401,7 +1371,7 @@ export async function registerRoutes(
             studentId,
             regularTeacherId: "", // Empty = shows as "미지정"
             clinicTeacherId: null,
-            centerId: cls.centerId,
+            
             clinicType: clinicType,
             grade: studentInfo?.grade || null, // Auto-fill grade from student profile
             classGroup: null, // 미등록 (unregistered)
@@ -1650,7 +1620,7 @@ export async function registerRoutes(
   app.get("/api/centers/:centerId/tuition-guidance", async (req, res) => {
     try {
       const guidance = await storage.getTuitionGuidance(req.params.centerId);
-      res.json(guidance || { centerId: req.params.centerId, guidanceText: null, imageUrls: [] });
+      res.json(guidance || { guidanceText: null, imageUrls: [] });
     } catch (error) {
       res.status(500).json({ error: "Failed to get tuition guidance" });
     }
@@ -2486,7 +2456,7 @@ export async function registerRoutes(
     try {
       const { centerId, regularTeacherId, clinicTeacherId, studentId } = req.query;
       const assignments = await storage.getClinicAssignments({
-        centerId: centerId as string | undefined,
+        
         regularTeacherId: regularTeacherId as string | undefined,
         clinicTeacherId: clinicTeacherId as string | undefined,
         studentId: studentId as string | undefined,
@@ -2791,7 +2761,7 @@ export async function registerRoutes(
               studentId: enrollment.studentId,
               regularTeacherId: "", // Empty = shows as "미지정"
               clinicTeacherId: null,
-              centerId: cls.centerId,
+              
               clinicType: clinicType,
               grade: studentInfo?.grade || null, // Auto-fill grade from student profile
               classGroup: null, // 미등록 (unregistered)
@@ -4248,7 +4218,7 @@ export async function registerRoutes(
       // Get student's enrolled classes in this center
       console.log("[VALIDATE-PIN] Fetching classes for studentId:", pinRecord.studentId, "centerId:", centerId);
       const enrolledClasses = await storage.getStudentEnrolledClasses(pinRecord.studentId, centerId);
-      console.log("[VALIDATE-PIN] Enrolled classes (before filter):", enrolledClasses.length, enrolledClasses.map(c => ({ id: c.id, name: c.name, centerId: c.centerId, isArchived: c.isArchived })));
+      console.log("[VALIDATE-PIN] Enrolled classes (before filter):", enrolledClasses.length, enrolledClasses.map(c => ({ id: c.id, name: c.name, isArchived: c.isArchived })));
       
       // Filter to only active (non-archived) classes
       const activeClasses = enrolledClasses.filter(c => !c.isArchived);
@@ -4969,7 +4939,7 @@ export async function registerRoutes(
   app.get("/api/study-cafe/settings/:centerId", async (req, res) => {
     try {
       const settings = await storage.getStudyCafeSettings(req.params.centerId);
-      res.json(settings || { centerId: req.params.centerId, isEnabled: false, notice: null });
+      res.json(settings || { isEnabled: false, notice: null });
     } catch (error) {
       res.status(500).json({ error: "Failed to get study cafe settings" });
     }
@@ -6308,7 +6278,7 @@ export async function registerRoutes(
   });
   
   // Helper function to sync marketing campaigns to financial records
-  const syncMarketingToFinance = async (centerId: string, yearMonth: string) => {
+  const syncMarketingToFinance = async (yearMonth: string) => {
     try {
       // Get all campaigns for this center and year
       const year = parseInt(yearMonth.split("-")[0]);
