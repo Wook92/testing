@@ -608,7 +608,7 @@ export default function StudentReportsPage() {
             <div>
               <Label>학생</Label>
               <p className="text-sm font-medium mt-1">
-                {centerStudents.find(s => s.id === generateStudentId)?.name}
+                {homeroomFilteredStudents.find((s: User) => s.id === generateStudentId)?.name}
               </p>
             </div>
             <div>

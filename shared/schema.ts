@@ -117,6 +117,8 @@ export const classes = pgTable("classes", {
   isArchived: boolean("is_archived").notNull().default(false), // true when teacher is deleted
   baseFee: integer("base_fee").notNull().default(0), // 기본금 (첫 수업 가격)
   additionalFee: integer("additional_fee").notNull().default(0), // 추가금 (추가 수업 가격)
+  monthlyPlan: text("monthly_plan"), // 월간 수업 계획
+  weeklyPlan: text("weekly_plan"), // 주간 수업 계획
 });
 
 export const insertClassSchema = createInsertSchema(classes).pick({
@@ -134,6 +136,8 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   color: true,
   baseFee: true,
   additionalFee: true,
+  monthlyPlan: true,
+  weeklyPlan: true,
 });
 export type InsertClass = z.infer<typeof insertClassSchema>;
 export type Class = typeof classes.$inferSelect;
