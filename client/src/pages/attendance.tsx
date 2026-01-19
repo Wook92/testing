@@ -566,6 +566,7 @@ export default function AttendancePage() {
                                 >
                                   결석
                                 </Button>
+                                <div className="w-px h-6 bg-border mx-1" />
                                 <Button
                                   size="sm"
                                   variant="outline"
