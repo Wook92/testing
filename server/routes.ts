@@ -2312,13 +2312,8 @@ export async function registerRoutes(
   // Assessments
   app.get("/api/assessments", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string | undefined;
-      if (centerId) {
-        const assessments = await storage.getAssessmentsByCenter(centerId);
-        res.json(assessments);
-      } else {
-        res.json([]);
-      }
+      const assessments = await storage.getAllAssessments();
+      res.json(assessments);
     } catch (error) {
       res.status(500).json({ error: "Failed to get assessments" });
     }

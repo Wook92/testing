@@ -182,6 +182,7 @@ export interface IStorage {
 
   getAssessment(id: string): Promise<Assessment | undefined>;
   getAssessmentsByCenter(centerId: string): Promise<any[]>;
+  getAllAssessments(): Promise<any[]>;
   getStudentAssessments(studentId: string, month?: string): Promise<any[]>;
   createAssessments(assessments: InsertAssessment[]): Promise<Assessment[]>;
   updateAssessment(id: string, data: { score: number; maxScore?: number }): Promise<Assessment>;
@@ -895,6 +896,30 @@ export class DatabaseStorage implements IStorage {
     
     // Batch fetch classes and students
     const classMap = new Map(centerClasses.map(c => [c.id, c]));
+    const studentIds = Array.from(new Set(allAssessments.map(a => a.studentId)));
+    const studentsData = studentIds.length > 0
+      ? await db.select().from(users).where(inArray(users.id, studentIds))
+      : [];
+    const studentMap = new Map(studentsData.map(s => [s.id, s]));
+    
+    return allAssessments.map(a => ({
+      ...a,
+      class: classMap.get(a.classId),
+      student: studentMap.get(a.studentId),
+    }));
+  }
+
+  async getAllAssessments(): Promise<any[]> {
+    const allAssessments = await db.select().from(assessments);
+    if (allAssessments.length === 0) return [];
+    
+    // Batch fetch classes and students
+    const classIds = Array.from(new Set(allAssessments.map(a => a.classId)));
+    const allClasses = classIds.length > 0
+      ? await db.select().from(classes).where(inArray(classes.id, classIds))
+      : [];
+    const classMap = new Map(allClasses.map(c => [c.id, c]));
+    
     const studentIds = Array.from(new Set(allAssessments.map(a => a.studentId)));
     const studentsData = studentIds.length > 0
       ? await db.select().from(users).where(inArray(users.id, studentIds))
