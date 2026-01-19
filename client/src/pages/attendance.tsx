@@ -538,73 +538,52 @@ export default function AttendancePage() {
                             </div>
                             
                             {isToday && (
-                              <div className="flex flex-col gap-2 mt-1">
-                                {/* 출결 상태 변경 */}
-                                <div className="flex items-center gap-1 p-2 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
-                                  <Badge variant="outline" className="text-xs shrink-0 w-14 justify-center bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700">
-                                    <UserCheck className="w-3 h-3 mr-1" />
-                                    상태
-                                  </Badge>
-                                  <div className="flex items-center gap-1 ml-2">
-                                    <Button
-                                      size="sm"
-                                      variant={status === "present" ? "default" : "outline"}
-                                      onClick={() => updateStatusMutation.mutate({ studentId: student.id, status: "present" })}
-                                      disabled={updateStatusMutation.isPending}
-                                      data-testid={`button-status-present-${student.id}`}
-                                    >
-                                      등원
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant={status === "late" ? "default" : "outline"}
-                                      onClick={() => updateStatusMutation.mutate({ studentId: student.id, status: "late" })}
-                                      disabled={updateStatusMutation.isPending}
-                                      data-testid={`button-status-late-${student.id}`}
-                                    >
-                                      지각
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant={status === "absent" ? "default" : "outline"}
-                                      onClick={() => updateStatusMutation.mutate({ studentId: student.id, status: "absent" })}
-                                      disabled={updateStatusMutation.isPending}
-                                      data-testid={`button-status-absent-${student.id}`}
-                                    >
-                                      결석
-                                    </Button>
-                                  </div>
-                                </div>
-                                
-                                {/* 문자 발송 */}
-                                <div className="flex items-center gap-1 p-2 bg-green-50 dark:bg-green-950/30 rounded border border-green-200 dark:border-green-800">
-                                  <Badge variant="outline" className="text-xs shrink-0 w-14 justify-center bg-green-100 dark:bg-green-900 border-green-300 dark:border-green-700">
-                                    <Send className="w-3 h-3 mr-1" />
-                                    문자
-                                  </Badge>
-                                  <div className="flex items-center gap-1 ml-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="border-green-300 dark:border-green-700"
-                                      onClick={() => sendSmsMutation.mutate({ studentId: student.id, type: "check_in" })}
-                                      disabled={sendSmsMutation.isPending}
-                                      data-testid={`button-sms-checkin-${student.id}`}
-                                    >
-                                      등원 알림
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="border-green-300 dark:border-green-700"
-                                      onClick={() => sendSmsMutation.mutate({ studentId: student.id, type: "late" })}
-                                      disabled={sendSmsMutation.isPending}
-                                      data-testid={`button-sms-late-${student.id}`}
-                                    >
-                                      지각 알림
-                                    </Button>
-                                  </div>
-                                </div>
+                              <div className="flex flex-wrap items-center gap-1 mt-2">
+                                <Button
+                                  size="sm"
+                                  variant={status === "present" ? "default" : "outline"}
+                                  onClick={() => updateStatusMutation.mutate({ studentId: student.id, status: "present" })}
+                                  disabled={updateStatusMutation.isPending}
+                                  data-testid={`button-status-present-${student.id}`}
+                                >
+                                  등원
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={status === "late" ? "default" : "outline"}
+                                  onClick={() => updateStatusMutation.mutate({ studentId: student.id, status: "late" })}
+                                  disabled={updateStatusMutation.isPending}
+                                  data-testid={`button-status-late-${student.id}`}
+                                >
+                                  지각
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={status === "absent" ? "default" : "outline"}
+                                  onClick={() => updateStatusMutation.mutate({ studentId: student.id, status: "absent" })}
+                                  disabled={updateStatusMutation.isPending}
+                                  data-testid={`button-status-absent-${student.id}`}
+                                >
+                                  결석
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => sendSmsMutation.mutate({ studentId: student.id, type: "check_in" })}
+                                  disabled={sendSmsMutation.isPending}
+                                  data-testid={`button-sms-checkin-${student.id}`}
+                                >
+                                  등원 알림
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => sendSmsMutation.mutate({ studentId: student.id, type: "late" })}
+                                  disabled={sendSmsMutation.isPending}
+                                  data-testid={`button-sms-late-${student.id}`}
+                                >
+                                  지각 알림
+                                </Button>
                               </div>
                             )}
                           </div>
