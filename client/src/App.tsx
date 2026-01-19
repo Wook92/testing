@@ -27,6 +27,7 @@ import TodosPage from "@/pages/todos";
 import PointsPage from "@/pages/points";
 import PointsManagementPage from "@/pages/points-management";
 import AnnouncementsPage from "@/pages/announcements";
+import CalendarPage from "@/pages/calendar";
 import { Loader2, User, Settings, LogOut, Download, Smartphone, Coins } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { PWAInstallProvider, usePWAInstall } from "@/lib/pwa-install";
@@ -151,6 +152,7 @@ function ProtectedRoutes() {
               <Route path="/points" component={PointsPage} />
               <Route path="/points-management" component={PointsManagementPage} />
               <Route path="/announcements" component={AnnouncementsPage} />
+              <Route path="/calendar" component={CalendarPage} />
               <Route path="/settings" component={SettingsPage} />
               <Route component={NotFound} />
             </Switch>
