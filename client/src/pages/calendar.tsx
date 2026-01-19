@@ -327,6 +327,9 @@ export default function CalendarPage() {
             </div>
             {calendarWeeks.map((week, weekIdx) => {
               const multiDayEvents = getMultiDayEventsForWeek(week);
+              const eventRowHeight = 22;
+              const baseHeight = 32;
+              const multiDayHeight = multiDayEvents.length * eventRowHeight;
               
               return (
                 <div key={weekIdx} className="relative">
@@ -336,6 +339,8 @@ export default function CalendarPage() {
                       const isCurrentMonth = isSameMonth(day, currentDate);
                       const isToday = isSameDay(day, new Date());
                       const dayOfWeek = getDay(day);
+                      const singleDayHeight = singleDayEvents.length * eventRowHeight;
+                      const minCellHeight = Math.max(80, baseHeight + multiDayHeight + singleDayHeight + 8);
 
                       return (
                         <div
@@ -347,10 +352,11 @@ export default function CalendarPage() {
                             }
                           }}
                           className={cn(
-                            "min-h-[100px] p-1 border-b border-r cursor-pointer hover:bg-muted/50 transition-colors relative",
+                            "p-1 border-b border-r cursor-pointer hover:bg-muted/50 transition-colors",
                             !isCurrentMonth && "bg-muted/30",
                             dayIdx === 0 && "border-l"
                           )}
+                          style={{ minHeight: `${minCellHeight}px` }}
                         >
                           <div
                             className={cn(
@@ -362,8 +368,8 @@ export default function CalendarPage() {
                           >
                             {format(day, "d")}
                           </div>
-                          <div className="mt-6 space-y-1">
-                            {singleDayEvents.slice(0, 2).map((event) => (
+                          <div style={{ marginTop: `${multiDayHeight + 4}px` }} className="space-y-0.5">
+                            {singleDayEvents.map((event) => (
                               <div
                                 key={event.id}
                                 onClick={(e) => {
@@ -378,48 +384,51 @@ export default function CalendarPage() {
                                 {event.title}
                               </div>
                             ))}
-                            {singleDayEvents.length > 2 && (
-                              <div className="text-xs text-muted-foreground text-center">
-                                +{singleDayEvents.length - 2}
-                              </div>
-                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="absolute top-8 left-0 right-0 pointer-events-none" style={{ zIndex: 10 }}>
-                    {multiDayEvents.map((event, eventIdx) => (
-                      <div
-                        key={event.id}
-                        className="pointer-events-auto mb-0.5"
-                        style={{
-                          marginLeft: `calc(${event.startCol * (100 / 7)}% + 2px)`,
-                          width: `calc(${event.span * (100 / 7)}% - 4px)`,
-                        }}
-                      >
+                  {multiDayEvents.length > 0 && (
+                    <div 
+                      className="absolute left-0 right-0 pointer-events-none" 
+                      style={{ 
+                        top: `${32}px`,
+                        zIndex: 10 
+                      }}
+                    >
+                      {multiDayEvents.map((event) => (
                         <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (canEdit) {
-                              openEditDialog(event);
-                            }
-                          }}
-                          className={cn(
-                            "text-xs py-1 px-2 truncate cursor-pointer hover:opacity-80",
-                            event.continuesFromPrev ? "rounded-l-none" : "rounded-l",
-                            event.continuesToNext ? "rounded-r-none" : "rounded-r"
-                          )}
-                          style={{ 
-                            backgroundColor: event.color || PASTEL_COLORS[4].value, 
-                            color: "#333",
+                          key={event.id}
+                          className="pointer-events-auto mb-0.5"
+                          style={{
+                            marginLeft: `calc(${event.startCol * (100 / 7)}% + 2px)`,
+                            width: `calc(${event.span * (100 / 7)}% - 4px)`,
                           }}
                         >
-                          {!event.continuesFromPrev && event.title}
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (canEdit) {
+                                openEditDialog(event);
+                              }
+                            }}
+                            className={cn(
+                              "text-xs py-1 px-2 truncate cursor-pointer hover:opacity-80",
+                              event.continuesFromPrev ? "rounded-l-none" : "rounded-l",
+                              event.continuesToNext ? "rounded-r-none" : "rounded-r"
+                            )}
+                            style={{ 
+                              backgroundColor: event.color || PASTEL_COLORS[4].value, 
+                              color: "#333",
+                            }}
+                          >
+                            {!event.continuesFromPrev && event.title}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
