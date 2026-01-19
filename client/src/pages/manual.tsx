@@ -438,39 +438,6 @@ const principalSections: ManualSection[] = [
     lastUpdated: "2026-01"
   },
   {
-    id: "management",
-    title: "경영 관리",
-    icon: BarChart3,
-    description: "선생님 근무 기록, 마케팅 캠페인 등 학원 경영을 관리합니다.",
-    features: [
-      {
-        title: "선생님 근무 기록",
-        description: "선생님들의 출퇴근 기록을 확인합니다.",
-        steps: [
-          "경영 관리 페이지로 이동합니다",
-          "'근무 기록' 탭을 선택합니다",
-          "조회 기간을 선택합니다",
-          "선생님별 출근/퇴근 시간과 근무 시간이 표시됩니다"
-        ]
-      },
-      {
-        title: "마케팅 캠페인",
-        description: "마케팅 캠페인과 비용을 관리합니다.",
-        steps: [
-          "'마케팅' 탭을 선택합니다",
-          "'캠페인 추가' 버튼을 클릭합니다",
-          "캠페인명, 채널, 기간, 예산을 입력합니다",
-          "'저장'을 클릭합니다"
-        ]
-      }
-    ],
-    tips: [
-      "선생님 근무 기록은 출결 화면에서 자동으로 기록됩니다",
-      "마케팅 비용은 연도별 비교 차트로 확인할 수 있습니다"
-    ],
-    lastUpdated: "2026-01"
-  },
-  {
     id: "todos",
     title: "할 일 관리",
     icon: CheckSquare,
