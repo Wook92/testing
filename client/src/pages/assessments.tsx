@@ -411,7 +411,7 @@ function ScoreInputDialog({ classItem, students, allCenterStudents, onClose }: {
   );
 }
 
-function DateLineChart({ data, title, showLegend = true }: { 
+function DateBarChart({ data, title, showLegend = true }: { 
   data: { date: string; dateLabel: string; myScore: number; classAverage: number; testName?: string }[]; 
   title?: string;
   showLegend?: boolean;
@@ -424,11 +424,11 @@ function DateLineChart({ data, title, showLegend = true }: {
           {showLegend && (
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#3B82F6" }} />
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#3B82F6" }} />
                 <span>내 점수</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#EF4444" }} />
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: "#EF4444" }} />
                 <span>반 평균</span>
               </div>
             </div>
@@ -437,8 +437,8 @@ function DateLineChart({ data, title, showLegend = true }: {
       )}
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ left: -20, right: 10, top: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+          <BarChart data={data} margin={{ left: -20, right: 10, top: 10, bottom: 5 }} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
             <XAxis dataKey="dateLabel" fontSize={10} tickLine={false} axisLine={false} />
             <YAxis domain={[0, 100]} fontSize={11} tickLine={false} axisLine={false} width={30} />
             <Tooltip 
@@ -460,23 +460,19 @@ function DateLineChart({ data, title, showLegend = true }: {
                 fontSize: "12px",
               }}
             />
-            <Line 
-              type="monotone" 
+            <Bar 
               dataKey="myScore" 
-              stroke="#3B82F6" 
-              strokeWidth={2}
-              dot={{ fill: "#3B82F6", r: 4 }}
-              activeDot={{ r: 6 }}
+              fill="#3B82F6" 
+              radius={[4, 4, 0, 0]}
+              name="myScore"
             />
-            <Line 
-              type="monotone" 
+            <Bar 
               dataKey="classAverage" 
-              stroke="#EF4444" 
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={{ fill: "#EF4444", r: 3 }}
+              fill="#EF4444" 
+              radius={[4, 4, 0, 0]}
+              name="classAverage"
             />
-          </LineChart>
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
@@ -594,7 +590,7 @@ function StudentAssessments() {
                       </Badge>
                     </div>
                   </div>
-                  <DateLineChart data={overallChartData} title="날짜별 성적 추이" />
+                  <DateBarChart data={overallChartData} title="날짜별 성적 추이" />
                 </div>
               )}
 
@@ -631,7 +627,7 @@ function StudentAssessments() {
                         <p className="text-xs text-muted-foreground mb-3">
                           {classAssessments.length}회 평가 | 내 월평균: {studentMonthlyAvg}점 | 반 평균: {classAvg}점
                         </p>
-                        <DateLineChart data={classChartData} showLegend={false} />
+                        <DateBarChart data={classChartData} showLegend={false} />
                       </Card>
                     );
                   })}
