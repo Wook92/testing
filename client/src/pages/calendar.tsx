@@ -328,107 +328,103 @@ export default function CalendarPage() {
             {calendarWeeks.map((week, weekIdx) => {
               const multiDayEvents = getMultiDayEventsForWeek(week);
               const eventRowHeight = 22;
-              const baseHeight = 32;
+              const dateRowHeight = 28;
               const multiDayHeight = multiDayEvents.length * eventRowHeight;
               
+              const maxSingleDayEventsInWeek = Math.max(
+                ...week.map(day => getSingleDayEventsForDay(day).length),
+                0
+              );
+              const singleDayHeight = maxSingleDayEventsInWeek * eventRowHeight;
+              const rowMinHeight = dateRowHeight + multiDayHeight + singleDayHeight + 16;
+              
               return (
-                <div key={weekIdx} className="relative">
-                  <div className="grid grid-cols-7">
-                    {week.map((day, dayIdx) => {
-                      const singleDayEvents = getSingleDayEventsForDay(day);
-                      const isCurrentMonth = isSameMonth(day, currentDate);
-                      const isToday = isSameDay(day, new Date());
-                      const dayOfWeek = getDay(day);
-                      const singleDayHeight = singleDayEvents.length * eventRowHeight;
-                      const minCellHeight = Math.max(80, baseHeight + multiDayHeight + singleDayHeight + 8);
+                <div 
+                  key={weekIdx} 
+                  className="grid grid-cols-7"
+                  style={{ minHeight: `${Math.max(80, rowMinHeight)}px` }}
+                >
+                  {week.map((day, dayIdx) => {
+                    const singleDayEvents = getSingleDayEventsForDay(day);
+                    const isCurrentMonth = isSameMonth(day, currentDate);
+                    const isToday = isSameDay(day, new Date());
+                    const dayOfWeek = getDay(day);
 
-                      return (
+                    return (
+                      <div
+                        key={dayIdx}
+                        onClick={() => {
+                          setSelectedDate(day);
+                          if (canEdit && singleDayEvents.length === 0) {
+                            openCreateDialog(day);
+                          }
+                        }}
+                        className={cn(
+                          "p-1 border-b border-r cursor-pointer hover:bg-muted/50 transition-colors relative",
+                          !isCurrentMonth && "bg-muted/30",
+                          dayIdx === 0 && "border-l"
+                        )}
+                      >
                         <div
-                          key={dayIdx}
-                          onClick={() => {
-                            setSelectedDate(day);
-                            if (canEdit && singleDayEvents.length === 0) {
-                              openCreateDialog(day);
-                            }
-                          }}
                           className={cn(
-                            "p-1 border-b border-r cursor-pointer hover:bg-muted/50 transition-colors",
-                            !isCurrentMonth && "bg-muted/30",
-                            dayIdx === 0 && "border-l"
+                            "text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full",
+                            isToday && "bg-primary text-primary-foreground",
+                            dayOfWeek === 0 && !isToday && "text-red-500",
+                            dayOfWeek === 6 && !isToday && "text-blue-500"
                           )}
-                          style={{ minHeight: `${minCellHeight}px` }}
                         >
-                          <div
-                            className={cn(
-                              "text-sm font-medium mb-1 w-6 h-6 flex items-center justify-center rounded-full",
-                              isToday && "bg-primary text-primary-foreground",
-                              dayOfWeek === 0 && !isToday && "text-red-500",
-                              dayOfWeek === 6 && !isToday && "text-blue-500"
-                            )}
-                          >
-                            {format(day, "d")}
-                          </div>
-                          <div style={{ marginTop: `${multiDayHeight + 4}px` }} className="space-y-0.5">
-                            {singleDayEvents.map((event) => (
-                              <div
-                                key={event.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (canEdit) {
-                                    openEditDialog(event);
-                                  }
-                                }}
-                                className="text-xs p-1 rounded truncate cursor-pointer hover:opacity-80"
-                                style={{ backgroundColor: event.color || PASTEL_COLORS[4].value, color: "#333" }}
-                              >
-                                {event.title}
-                              </div>
-                            ))}
-                          </div>
+                          {format(day, "d")}
                         </div>
-                      );
-                    })}
-                  </div>
-                  {multiDayEvents.length > 0 && (
-                    <div 
-                      className="absolute left-0 right-0 pointer-events-none" 
-                      style={{ 
-                        top: `${32}px`,
-                        zIndex: 10 
-                      }}
-                    >
-                      {multiDayEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className="pointer-events-auto mb-0.5"
-                          style={{
-                            marginLeft: `calc(${event.startCol * (100 / 7)}% + 2px)`,
-                            width: `calc(${event.span * (100 / 7)}% - 4px)`,
-                          }}
+                        
+                        {multiDayEvents.filter(e => e.startCol === dayIdx).map((event, eventIdx) => {
+                          const topOffset = dateRowHeight + eventIdx * eventRowHeight;
+                          return (
+                            <div
+                              key={event.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (canEdit) openEditDialog(event);
+                              }}
+                              className={cn(
+                                "absolute left-0.5 right-0.5 text-xs py-0.5 px-1 truncate cursor-pointer hover:opacity-80 z-10",
+                                event.continuesFromPrev ? "rounded-l-none" : "rounded-l",
+                                event.continuesToNext ? "rounded-r-none" : "rounded-r"
+                              )}
+                              style={{ 
+                                backgroundColor: event.color || PASTEL_COLORS[4].value, 
+                                color: "#333",
+                                top: `${topOffset}px`,
+                                width: `calc(${event.span * 100}% - 4px)`,
+                              }}
+                            >
+                              {!event.continuesFromPrev && event.title}
+                            </div>
+                          );
+                        })}
+                        
+                        <div 
+                          className="space-y-0.5"
+                          style={{ marginTop: `${multiDayHeight + 4}px` }}
                         >
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (canEdit) {
-                                openEditDialog(event);
-                              }
-                            }}
-                            className={cn(
-                              "text-xs py-1 px-2 truncate cursor-pointer hover:opacity-80",
-                              event.continuesFromPrev ? "rounded-l-none" : "rounded-l",
-                              event.continuesToNext ? "rounded-r-none" : "rounded-r"
-                            )}
-                            style={{ 
-                              backgroundColor: event.color || PASTEL_COLORS[4].value, 
-                              color: "#333",
-                            }}
-                          >
-                            {!event.continuesFromPrev && event.title}
-                          </div>
+                          {singleDayEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (canEdit) {
+                                  openEditDialog(event);
+                                }
+                              }}
+                              className="text-xs p-1 rounded truncate cursor-pointer hover:opacity-80"
+                              style={{ backgroundColor: event.color || PASTEL_COLORS[4].value, color: "#333" }}
+                            >
+                              {event.title}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
