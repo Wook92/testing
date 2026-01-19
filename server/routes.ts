@@ -2000,19 +2000,12 @@ export async function registerRoutes(
 
   // Teacher APIs
   
-  // Get teachers for a center (for homeroom assignment dropdown)
+  // Get teachers (for homeroom assignment dropdown and todo assignment)
   app.get("/api/teachers", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
-      if (!centerId) {
-        return res.status(400).json({ error: "Center ID required" });
-      }
-      
-      // Optimized: only load users belonging to this center
-      const centerUsers = await storage.getCenterUsers(centerId);
-      
-      // Filter to staff (teachers, clinic teachers, principals, admin)
-      const staff = centerUsers.filter(u => u.role >= UserRole.TEACHER);
+      // Get all users with role >= TEACHER (includes teachers and principals)
+      const allUsers = await storage.getUsers();
+      const staff = allUsers.filter((u: any) => u.role >= UserRole.TEACHER);
       
       res.json(staff);
     } catch (error) {
