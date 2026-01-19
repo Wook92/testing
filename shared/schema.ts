@@ -107,7 +107,7 @@ export const classes = pgTable("classes", {
   classLevel: text("class_level").notNull().default("middle"), // middle | high (중등/고등)
   teacherId: varchar("teacher_id"), // nullable - null when teacher is deleted
   teacherName: text("teacher_name"), // snapshot of teacher name when archived
-  centerId: varchar("center_id").notNull(),
+  centerId: varchar("center_id"), // nullable - single academy mode
   classroom: text("classroom"), // 강의실 (예: A101, B202)
   days: text("days").array().notNull(), // ['mon', 'wed', 'fri'] - kept for backwards compatibility
   startTime: text("start_time").notNull(), // '14:00' - default time
@@ -127,7 +127,6 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   classType: true,
   classLevel: true,
   teacherId: true,
-  centerId: true,
   classroom: true,
   days: true,
   startTime: true,
