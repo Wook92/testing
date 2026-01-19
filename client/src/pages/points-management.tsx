@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Minus, Gift, Search } from "lucide-react";
+import { Loader2, Plus, Minus, Gift, Search, CheckCircle, BookOpen, Trophy, Info } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function PointsManagementPage() {
@@ -114,6 +115,41 @@ export default function PointsManagementPage() {
           />
         </div>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Info className="h-5 w-5 text-blue-500" />
+            <CardTitle className="text-base">포인트 적립 기준</CardTitle>
+          </div>
+          <CardDescription>학생들에게 아래 기준으로 포인트가 적립됩니다</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+              <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+              <div>
+                <div className="font-medium text-sm">출석</div>
+                <div className="text-xs text-muted-foreground">수업 출석 시 10P</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+              <BookOpen className="h-5 w-5 text-blue-500 shrink-0" />
+              <div>
+                <div className="font-medium text-sm">숙제 제출</div>
+                <div className="text-xs text-muted-foreground">완료 20P, 우수 완료 30P</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+              <Trophy className="h-5 w-5 text-yellow-500 shrink-0" />
+              <div>
+                <div className="font-medium text-sm">테스트 성적</div>
+                <div className="text-xs text-muted-foreground">90점↑ 50P, 80점↑ 30P, 70점↑ 20P</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
