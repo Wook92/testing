@@ -31,18 +31,18 @@ interface CalendarEvent {
 }
 
 const PASTEL_COLORS = [
-  { value: "#FFB3BA", label: "핑크" },
-  { value: "#FFDFBA", label: "피치" },
-  { value: "#FFFFBA", label: "옐로우" },
-  { value: "#BAFFC9", label: "민트" },
-  { value: "#BAE1FF", label: "스카이" },
-  { value: "#E2BAFF", label: "라벤더" },
-  { value: "#FFB3E6", label: "로즈" },
-  { value: "#C9FFBA", label: "라임" },
-  { value: "#BAFFFF", label: "아쿠아" },
-  { value: "#FFCBA4", label: "코랄" },
-  { value: "#D4A5FF", label: "퍼플" },
-  { value: "#A5D4FF", label: "블루" },
+  { value: "#FF9AA2", label: "코랄" },
+  { value: "#FFB347", label: "오렌지" },
+  { value: "#FDFD96", label: "옐로우" },
+  { value: "#77DD77", label: "그린" },
+  { value: "#89CFF0", label: "스카이" },
+  { value: "#B19CD9", label: "라벤더" },
+  { value: "#FF6B6B", label: "레드" },
+  { value: "#98D8C8", label: "민트" },
+  { value: "#87CEEB", label: "블루" },
+  { value: "#DDA0DD", label: "플럼" },
+  { value: "#F0E68C", label: "카키" },
+  { value: "#E6A8D7", label: "핑크" },
 ];
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
