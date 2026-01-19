@@ -565,10 +565,27 @@ interface ClassWithTeacher extends Class {
 function EnrollDialog({ classItem, onClose }: { classItem: ClassWithTeacher; onClose: () => void }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("info");
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
+
+  const currentWeekStart = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
+  const currentWeekEnd = endOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
+  const currentMonthStart = startOfMonth(addMonths(new Date(), monthOffset));
 
   const { data: enrollments } = useQuery<any[]>({
     queryKey: [`/api/students/${user?.id}/enrollments`],
     enabled: !!user?.id,
+  });
+
+  const { data: weeklyPlanData } = useQuery<{ content?: string }>({
+    queryKey: [`/api/class-plans/weekly?actorId=${user?.id}&classId=${classItem.id}&weekStart=${format(currentWeekStart, "yyyy-MM-dd")}`],
+    enabled: !!classItem.id && !!user,
+  });
+
+  const { data: monthlyPlanData } = useQuery<{ content?: string }>({
+    queryKey: [`/api/class-plans/monthly?actorId=${user?.id}&classId=${classItem.id}&month=${format(currentMonthStart, "yyyy-MM")}`],
+    enabled: !!classItem.id && !!user,
   });
 
   const isEnrolled = enrollments?.some((e) => e.classId === classItem.id);
@@ -608,47 +625,126 @@ function EnrollDialog({ classItem, onClose }: { classItem: ClassWithTeacher; onC
         </div>
       </div>
 
-      <div className="grid gap-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">요일</span>
-          <span>{classItem.days.map((d) => DAYS.find((day) => day.key === d)?.label).join(", ")}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">시간</span>
-          <span>{classItem.startTime} - {classItem.endTime}</span>
-        </div>
-        {classItem.teacher && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">선생님</span>
-            <span>{classItem.teacher.name} 선생님</span>
-          </div>
-        )}
-        {classItem.classroom && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">강의실</span>
-            <span>{classItem.classroom}</span>
-          </div>
-        )}
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="info">수업 정보</TabsTrigger>
+          <TabsTrigger value="plans">수업 계획</TabsTrigger>
+        </TabsList>
 
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          취소
-        </Button>
-        {isEnrolled ? (
-          <Button disabled variant="secondary">
-            이미 신청됨
-          </Button>
-        ) : (
-          <Button
-            onClick={() => enrollMutation.mutate()}
-            disabled={enrollMutation.isPending}
-            data-testid="button-enroll"
-          >
-            {enrollMutation.isPending ? "신청 중..." : "수업 신청"}
-          </Button>
-        )}
-      </DialogFooter>
+        <TabsContent value="info" className="space-y-4 mt-4">
+          <div className="grid gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">요일</span>
+              <span>{classItem.days.map((d) => DAYS.find((day) => day.key === d)?.label).join(", ")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">시간</span>
+              <span>{classItem.startTime} - {classItem.endTime}</span>
+            </div>
+            {classItem.teacher && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">선생님</span>
+                <span>{classItem.teacher.name} 선생님</span>
+              </div>
+            )}
+            {classItem.classroom && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">강의실</span>
+                <span>{classItem.classroom}</span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              닫기
+            </Button>
+            {isEnrolled ? (
+              <Button disabled variant="secondary">
+                이미 신청됨
+              </Button>
+            ) : (
+              <Button
+                onClick={() => enrollMutation.mutate()}
+                disabled={enrollMutation.isPending}
+                data-testid="button-enroll"
+              >
+                {enrollMutation.isPending ? "신청 중..." : "수업 신청"}
+              </Button>
+            )}
+          </DialogFooter>
+        </TabsContent>
+
+        <TabsContent value="plans" className="space-y-4 mt-4">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-sm flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  주간 수업 계획
+                </h4>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setWeekOffset(prev => prev - 1)}>
+                    이전
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setWeekOffset(0)}>
+                    이번 주
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setWeekOffset(prev => prev + 1)}>
+                    다음
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {format(currentWeekStart, "yyyy년 M월 d일", { locale: ko })} - {format(currentWeekEnd, "M월 d일", { locale: ko })}
+              </p>
+              <div className="p-3 bg-muted rounded-md min-h-[80px]">
+                {weeklyPlanData?.content ? (
+                  <p className="text-sm whitespace-pre-wrap">{weeklyPlanData.content}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">등록된 주간 계획이 없습니다.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-sm flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  월간 수업 계획
+                </h4>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setMonthOffset(prev => prev - 1)}>
+                    이전
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setMonthOffset(0)}>
+                    이번 달
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setMonthOffset(prev => prev + 1)}>
+                    다음
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {format(currentMonthStart, "yyyy년 M월", { locale: ko })}
+              </p>
+              <div className="p-3 bg-muted rounded-md min-h-[80px]">
+                {monthlyPlanData?.content ? (
+                  <p className="text-sm whitespace-pre-wrap">{monthlyPlanData.content}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">등록된 월간 계획이 없습니다.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              닫기
+            </Button>
+          </DialogFooter>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -1233,11 +1329,11 @@ export default function TimetablePage() {
       </Card>
 
       <Dialog open={!!selectedClass} onOpenChange={(open) => !open && setSelectedClass(null)}>
-        <DialogContent>
+        <DialogContent className={isTeacherOrAbove ? "" : "max-w-lg"}>
           <DialogHeader>
-            <DialogTitle>{isTeacherOrAbove ? "수업 관리" : "수업 신청"}</DialogTitle>
+            <DialogTitle>{isTeacherOrAbove ? "수업 관리" : "수업 상세"}</DialogTitle>
             <DialogDescription>
-              {isTeacherOrAbove ? "수업을 수정하거나 삭제할 수 있습니다" : "이 수업에 신청하시겠습니까?"}
+              {isTeacherOrAbove ? "수업을 수정하거나 삭제할 수 있습니다" : "수업 정보 및 수업 계획을 확인할 수 있습니다"}
             </DialogDescription>
           </DialogHeader>
           {selectedClass && (
