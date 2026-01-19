@@ -1563,49 +1563,7 @@ export async function registerRoutes(
     }
   });
 
-  // Parent APIs - Get linked children data (disabled - PARENT role not implemented)
-  app.get("/api/parents/:id/children", async (req, res) => {
-    try {
-      const parent = await storage.getUser(req.params.id);
-      if (!parent || parent.role !== UserRole.PARENT) {
-        return res.status(404).json({ error: "Parent not found" });
-      }
-
-      const linkedStudentIds = parent.linkedStudentIds || [];
-      if (linkedStudentIds.length === 0) {
-        return res.json([]);
-      }
-
-      const children = await Promise.all(
-        linkedStudentIds.map(async (studentId) => {
-          const child = await storage.getUser(studentId);
-          if (!child) return null;
-
-          const enrollments = await storage.getStudentEnrollments(studentId);
-          const enrichedEnrollments = await Promise.all(
-            enrollments.map(async (e) => {
-              const cls = await storage.getClass(e.classId);
-              if (cls) {
-                const teacher = cls.teacherId ? await storage.getUser(cls.teacherId) : null;
-                const center = await storage.getCenter(cls.centerId);
-                return { ...e, class: cls, teacher, center };
-              }
-              return { ...e, class: null, teacher: null, center: null };
-            })
-          );
-
-          const tuitionPassword = await storage.getTuitionAccessPassword(studentId);
-          const hasPassword = !!tuitionPassword;
-
-          return { child, enrollments: enrichedEnrollments, hasPassword };
-        })
-      );
-
-      res.json(children.filter(Boolean));
-    } catch (error) {
-      res.status(500).json({ error: "Failed to get children data" });
-    }
-  });
+  // Parent APIs - Disabled (PARENT role removed from system)
 
   // Tuition Access Password APIs
   // Check if password exists for a student
@@ -1618,26 +1576,21 @@ export async function registerRoutes(
     }
   });
 
-  // Set/update password (parent only - must be linked to student)
+  // Set/update password (principal only)
   app.post("/api/students/:id/tuition-password", async (req, res) => {
     try {
-      const { password, parentId } = req.body;
+      const { password, userId } = req.body;
       if (!password || password.length < 4) {
         return res.status(400).json({ error: "비밀번호는 4자리 이상이어야 합니다" });
       }
-      if (!parentId) {
-        return res.status(400).json({ error: "parentId is required" });
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
       }
 
-      // Verify parent is linked to this student
-      const parent = await storage.getUser(parentId);
-      if (!parent || parent.role !== UserRole.PARENT) {
-        return res.status(403).json({ error: "학부모 계정만 비밀번호를 설정할 수 있습니다" });
-      }
-
-      const linkedStudentIds = parent.linkedStudentIds || [];
-      if (!linkedStudentIds.includes(req.params.id)) {
-        return res.status(403).json({ error: "연결된 자녀만 비밀번호를 설정할 수 있습니다" });
+      // Verify user is principal
+      const user = await storage.getUser(userId);
+      if (!user || user.role < UserRole.PRINCIPAL) {
+        return res.status(403).json({ error: "원장만 비밀번호를 설정할 수 있습니다" });
       }
 
       const result = await storage.setTuitionAccessPassword(req.params.id, password);
@@ -1671,23 +1624,18 @@ export async function registerRoutes(
     }
   });
 
-  // Delete password (parent only)
+  // Delete password (principal only)
   app.delete("/api/students/:id/tuition-password", async (req, res) => {
     try {
-      const { parentId } = req.body;
-      if (!parentId) {
-        return res.status(400).json({ error: "parentId is required" });
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
       }
 
-      // Verify parent is linked to this student
-      const parent = await storage.getUser(parentId);
-      if (!parent || parent.role !== UserRole.PARENT) {
-        return res.status(403).json({ error: "학부모 계정만 비밀번호를 삭제할 수 있습니다" });
-      }
-
-      const linkedStudentIds = parent.linkedStudentIds || [];
-      if (!linkedStudentIds.includes(req.params.id)) {
-        return res.status(403).json({ error: "연결된 자녀만 비밀번호를 삭제할 수 있습니다" });
+      // Verify user is principal
+      const user = await storage.getUser(userId);
+      if (!user || user.role < UserRole.PRINCIPAL) {
+        return res.status(403).json({ error: "원장만 비밀번호를 삭제할 수 있습니다" });
       }
 
       await storage.deleteTuitionAccessPassword(req.params.id);
@@ -1927,22 +1875,21 @@ export async function registerRoutes(
   // Get monthly student trends for admin/principal dashboard
   app.get("/api/dashboard/student-trends", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
       const actorId = req.query.actorId as string;
       
-      if (!centerId || !actorId) {
-        return res.status(400).json({ error: "centerId and actorId are required" });
+      if (!actorId) {
+        return res.status(400).json({ error: "actorId is required" });
       }
       
-      // Verify actor is admin or principal
+      // Verify actor is principal
       const actor = await storage.getUser(actorId);
-      if (!actor || (actor.role !== 3 && actor.role !== 4)) {
+      if (!actor || actor.role < UserRole.PRINCIPAL) {
         return res.status(403).json({ error: "권한이 없습니다" });
       }
       
-      // Optimized: only load students in this specific center
-      const centerUsers = await storage.getCenterUsers(centerId, UserRole.STUDENT);
-      const studentsInCenter = centerUsers;
+      // Get all students
+      const allUsers = await storage.getUsers();
+      const studentsInCenter = allUsers.filter((u: any) => u.role === UserRole.STUDENT);
       
       const now = new Date();
       const currentYear = now.getFullYear();
@@ -2016,14 +1963,9 @@ export async function registerRoutes(
 
   app.get("/api/teachers/:id/stats", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
-      if (!centerId) {
-        return res.status(400).json({ error: "Center ID required" });
-      }
-
       const teacherId = req.params.id;
       const teacher = await storage.getUser(teacherId);
-      const classes = await storage.getClasses(centerId);
+      const classes = await storage.getClasses();
       const teacherClasses = classes.filter((c) => c.teacherId === teacherId);
       
       const today = new Date();
@@ -2044,9 +1986,9 @@ export async function registerRoutes(
       const totalStudents = studentIds.size;
 
       // Filter submissions to only include relevant students
-      const submissions = await storage.getSubmissionsByCenter(centerId);
-      const pendingReviews = submissions.filter(
-        (s) => s.status === "submitted" && studentIds.has(s.studentId)
+      const allSubmissions = await storage.getAllSubmissions();
+      const pendingReviews = allSubmissions.filter(
+        (s: any) => s.status === "submitted" && studentIds.has(s.studentId)
       ).length;
 
       const assessmentClasses = teacherClasses.filter((c) => c.classType === "assessment").length;

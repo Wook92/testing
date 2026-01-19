@@ -174,6 +174,7 @@ export interface IStorage {
   getSubmission(id: string): Promise<HomeworkSubmission | undefined>;
   getSubmissionByHomeworkAndStudent(homeworkId: string, studentId: string): Promise<HomeworkSubmission | undefined>;
   getSubmissionsByCenter(centerId: string): Promise<any[]>;
+  getAllSubmissions(): Promise<any[]>;
   getStudentSubmissions(studentId: string): Promise<HomeworkSubmission[]>;
   getSubmissionPhotos(id: string): Promise<string[]>;
   createSubmission(submission: InsertHomeworkSubmission): Promise<HomeworkSubmission>;
@@ -820,6 +821,21 @@ export class DatabaseStorage implements IStorage {
       homework: homeworkMap.get(s.homeworkId),
       student: studentMap.get(s.studentId),
     }));
+  }
+
+  async getAllSubmissions(): Promise<any[]> {
+    const submissions = await db.select({
+      id: homeworkSubmissions.id,
+      homeworkId: homeworkSubmissions.homeworkId,
+      studentId: homeworkSubmissions.studentId,
+      completionRate: homeworkSubmissions.completionRate,
+      status: homeworkSubmissions.status,
+      feedback: homeworkSubmissions.feedback,
+      resubmitReason: homeworkSubmissions.resubmitReason,
+      submittedAt: homeworkSubmissions.submittedAt,
+      reviewedAt: homeworkSubmissions.reviewedAt,
+    }).from(homeworkSubmissions);
+    return submissions.map(s => ({ ...s, photos: [] }));
   }
 
   async getStudentSubmissions(studentId: string): Promise<HomeworkSubmission[]> {
