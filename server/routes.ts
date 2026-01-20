@@ -1142,10 +1142,12 @@ export async function registerRoutes(
 
   app.post("/api/classes", async (req, res) => {
     try {
+      console.log("[POST classes] Request body:", JSON.stringify(req.body, null, 2));
       const cls = await storage.createClass(req.body);
       res.json(cls);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create class" });
+    } catch (error: any) {
+      console.error("[POST classes] Error:", error);
+      res.status(500).json({ error: "Failed to create class", details: error?.message });
     }
   });
 
