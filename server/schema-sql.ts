@@ -437,7 +437,7 @@ CREATE TABLE IF NOT EXISTS "todo_assignees" (
 
 CREATE TABLE IF NOT EXISTS "todos" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "creator_id" varchar NOT NULL,
         "title" text NOT NULL,
         "description" text,
