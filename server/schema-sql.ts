@@ -726,33 +726,142 @@ ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "monthly_plan" text;
 ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "weekly_plan" text;
 
 -- Fix center_id to be nullable for single-academy mode (all tables that have center_id)
-ALTER TABLE "classes" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "todos" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "attendance_records" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "attendance_pins" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "clinic_students" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "message_templates" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "student_monthly_reports" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "teacher_work_records" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "announcements" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "clinic_assignments" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "clinic_resources" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "clinic_shared_instruction_groups" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "marketing_campaigns" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "monthly_financial_records" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "monthly_student_snapshots" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "solapi_credentials" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "student_exit_records" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "student_textbook_purchases" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "study_cafe_fixed_seats" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "study_cafe_reservations" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "study_cafe_seats" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "study_cafe_settings" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "teacher_check_in_settings" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "teacher_salary_adjustments" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "teacher_salary_settings" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "tuition_guidances" ALTER COLUMN "center_id" DROP NOT NULL;
-ALTER TABLE "tuition_notifications" ALTER COLUMN "center_id" DROP NOT NULL;
+-- Using DO blocks to safely drop NOT NULL constraints without failing if already nullable
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'classes' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "classes" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'todos' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "todos" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'attendance_records' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "attendance_records" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'attendance_pins' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "attendance_pins" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'clinic_students' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "clinic_students" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'message_templates' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "message_templates" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'student_monthly_reports' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "student_monthly_reports" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'teacher_work_records' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "teacher_work_records" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'announcements' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "announcements" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'clinic_assignments' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "clinic_assignments" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'clinic_resources' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "clinic_resources" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'clinic_shared_instruction_groups' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "clinic_shared_instruction_groups" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'marketing_campaigns' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "marketing_campaigns" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'monthly_financial_records' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "monthly_financial_records" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'monthly_student_snapshots' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "monthly_student_snapshots" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'solapi_credentials' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "solapi_credentials" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'student_exit_records' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "student_exit_records" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'student_textbook_purchases' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "student_textbook_purchases" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'study_cafe_fixed_seats' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "study_cafe_fixed_seats" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'study_cafe_reservations' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "study_cafe_reservations" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'study_cafe_seats' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "study_cafe_seats" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'study_cafe_settings' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "study_cafe_settings" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'teacher_check_in_settings' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "teacher_check_in_settings" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'teacher_salary_adjustments' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "teacher_salary_adjustments" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'teacher_salary_settings' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "teacher_salary_settings" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tuition_guidances' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "tuition_guidances" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tuition_notifications' AND column_name = 'center_id' AND is_nullable = 'NO') THEN
+        ALTER TABLE "tuition_notifications" ALTER COLUMN "center_id" DROP NOT NULL;
+    END IF;
+END $$;
 
 -- Student Points (학생 포인트)
 CREATE TABLE IF NOT EXISTS "student_points" (
