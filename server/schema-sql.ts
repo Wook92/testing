@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS "assessments" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "class_id" varchar NOT NULL,
         "student_id" varchar NOT NULL,
+        "name" text,
+        "scope" text,
         "score" integer NOT NULL,
         "max_score" integer DEFAULT 100 NOT NULL,
         "assessment_date" date NOT NULL,
@@ -802,12 +804,30 @@ CREATE TABLE IF NOT EXISTS "announcements" (
 CREATE TABLE IF NOT EXISTS "calendar_events" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "title" text NOT NULL,
+        "description" text,
+        "event_type" text NOT NULL DEFAULT 'academy_event',
+        "school_name" text,
         "start_date" date NOT NULL,
         "end_date" date,
-        "color" text DEFAULT '#3B82F6' NOT NULL,
-        "description" text,
-        "created_by" varchar NOT NULL,
+        "color" text,
+        "created_by_id" varchar NOT NULL,
         "created_at" timestamp DEFAULT now(),
         "updated_at" timestamp DEFAULT now()
 );
+
+-- Add missing columns to assessments table
+ALTER TABLE "assessments" ADD COLUMN IF NOT EXISTS "name" text;
+ALTER TABLE "assessments" ADD COLUMN IF NOT EXISTS "scope" text;
+
+-- Add missing columns to calendar_events table
+ALTER TABLE "calendar_events" ADD COLUMN IF NOT EXISTS "event_type" text DEFAULT 'academy_event';
+ALTER TABLE "calendar_events" ADD COLUMN IF NOT EXISTS "school_name" text;
+-- Rename created_by to created_by_id if needed (safe migration)
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'calendar_events' AND column_name = 'created_by') 
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'calendar_events' AND column_name = 'created_by_id') THEN
+        ALTER TABLE "calendar_events" RENAME COLUMN "created_by" TO "created_by_id";
+    END IF;
+END $$;
 `;
