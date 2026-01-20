@@ -3470,30 +3470,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getStudentsWithPoints(centerId?: string): Promise<any[]> {
+    console.log("[Storage] getStudentsWithPoints called with centerId:", centerId);
+    
     const allStudents = await this.getUsers(centerId);
+    console.log("[Storage] Got", allStudents.length, "total users");
+    
     const students = allStudents.filter(u => u.role === UserRole.STUDENT);
+    console.log("[Storage] Filtered to", students.length, "students");
     
     const result = [];
     for (const student of students) {
-      const points = await this.getStudentPoints(student.id);
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const monthlyTransactions = await this.getPointTransactionsSince(student.id, monthStart);
-      const monthlyPoints = monthlyTransactions
-        .filter(t => t.amount > 0)
-        .reduce((sum, t) => sum + t.amount, 0);
-      
-      result.push({
-        id: student.id,
-        name: student.name,
-        grade: student.grade,
-        phone: student.phone,
-        points: points?.totalPoints || 0,
-        availablePoints: points?.availablePoints || 0,
-        monthlyPoints,
-      });
+      try {
+        const points = await this.getStudentPoints(student.id);
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthlyTransactions = await this.getPointTransactionsSince(student.id, monthStart);
+        const monthlyPoints = monthlyTransactions
+          .filter(t => t.amount > 0)
+          .reduce((sum, t) => sum + t.amount, 0);
+        
+        result.push({
+          id: student.id,
+          name: student.name,
+          grade: student.grade,
+          phone: student.phone,
+          points: points?.totalPoints || 0,
+          availablePoints: points?.availablePoints || 0,
+          monthlyPoints,
+        });
+      } catch (err: any) {
+        console.error("[Storage] Error processing student", student.id, ":", err?.message);
+        result.push({
+          id: student.id,
+          name: student.name,
+          grade: student.grade,
+          phone: student.phone,
+          points: 0,
+          availablePoints: 0,
+          monthlyPoints: 0,
+        });
+      }
     }
     
+    console.log("[Storage] Returning", result.length, "students with points");
     return result;
   }
 

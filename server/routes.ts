@@ -7173,6 +7173,8 @@ export async function registerRoutes(
   app.get("/api/students/with-points", async (req, res) => {
     try {
       const { actorId, centerId } = req.query;
+      console.log("[API] /api/students/with-points called with actorId:", actorId, "centerId:", centerId);
+      
       if (!actorId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
       }
@@ -7182,11 +7184,15 @@ export async function registerRoutes(
       }
       
       const validCenterId = centerId && centerId !== "undefined" ? centerId as string : undefined;
+      console.log("[API] Getting students with points, validCenterId:", validCenterId);
+      
       const students = await storage.getStudentsWithPoints(validCenterId);
+      console.log("[API] Got", students.length, "students with points");
+      
       res.json(students);
-    } catch (error) {
-      console.error("Failed to get students with points:", error);
-      res.status(500).json({ error: "Failed to get students with points" });
+    } catch (error: any) {
+      console.error("Failed to get students with points:", error?.message || error, error?.stack);
+      res.status(500).json({ error: "Failed to get students with points", details: error?.message });
     }
   });
 
