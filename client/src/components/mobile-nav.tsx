@@ -13,7 +13,6 @@ import {
   FileBarChart, 
   HelpCircle, 
   ListTodo, 
-  TrendingUp, 
   BookOpen, 
   Coins, 
   MessageSquare,
@@ -65,7 +64,6 @@ const principalMoreItems = [
   { title: "학원 캘린더", url: "/calendar", icon: CalendarDays },
   { title: "사용자 관리", url: "/users", icon: Users },
   { title: "포인트 관리", url: "/points-management", icon: Coins },
-  { title: "경영", url: "/management", icon: TrendingUp },
   { title: "설정", url: "/settings", icon: Settings },
   { title: "매뉴얼", url: "/manual", icon: HelpCircle },
 ];
