@@ -178,11 +178,14 @@ After deployment, the server will automatically create required tables on first 
 
 ## Recent Changes (January 2026)
 
-### Center Functionality Removal
-- Removed all center/branch filtering system-wide
-- System now operates as a single academy mode
-- All API routes updated to work without centerId parameters
-- UI removed center selector from all pages
+### Center Functionality Removal (In Progress)
+- System now operates as a single academy mode (no multi-branch support)
+- All center_id database columns made nullable (NOT NULL constraints removed)
+- API routes updated to make centerId optional in query parameters
+- Storage methods updated to handle nullable centerId with type guards
+- Frontend types cleaned up to remove mandatory centerId fields
+- Report generation now uses global methods instead of center-scoped ones
+- Note: Some legacy center entities (centers table, userCenters) remain for backward compatibility but are not used for filtering
 
 ### Role System Simplification
 - Removed ADMIN and CLINIC_TEACHER roles
