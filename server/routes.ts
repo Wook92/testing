@@ -828,7 +828,6 @@ export async function registerRoutes(
       // Dynamic import of XLSX to reduce startup memory
       const XLSX = await import("xlsx");
 
-      const defaultCenterIds = JSON.parse(req.body.centerIds || "[]");
       const ext = path.extname(req.file.originalname).toLowerCase();
 
       let workbook: any;
@@ -878,12 +877,6 @@ export async function registerRoutes(
         return res.status(400).json({ error: "엑셀 파일에 데이터가 없습니다" });
       }
 
-      const allCenters = await storage.getCenters();
-      const centerNameToId = new Map<string, string>();
-      for (const center of allCenters) {
-        centerNameToId.set(center.name, center.id);
-      }
-
       const results = {
         success: 0,
         failed: 0,
@@ -930,7 +923,6 @@ export async function registerRoutes(
           const motherPhone = parsePhone(getRowValue(row, "어머니 전화번호", "어머니전화번호", "어머니연락처", "엄마연락처", "어머니 연락처"));
           const fatherPhone = parsePhone(getRowValue(row, "아버지 전화번호", "아버지전화번호", "아버지연락처", "아빠연락처", "아버지 연락처"));
           const studentPhone = parsePhone(getRowValue(row, "학생 전화번호", "학생전화번호", "학생연락처", "전화번호", "연락처", "휴대폰"));
-          const centerName = parseCell(getRowValue(row, "센터명", "센터", "지점", "지점명", "센터 "));
 
           if (!name) {
             // Debug: show what columns were found
@@ -958,26 +950,6 @@ export async function registerRoutes(
             continue;
           }
 
-          let rowCenterIds: string[] = [];
-          if (centerName) {
-            const centerId = centerNameToId.get(centerName);
-            if (centerId) {
-              rowCenterIds = [centerId];
-            } else {
-              results.failed++;
-              results.errors.push(`${name}: 존재하지 않는 센터입니다 (${centerName})`);
-              continue;
-            }
-          } else {
-            rowCenterIds = defaultCenterIds;
-          }
-
-          if (rowCenterIds.length === 0) {
-            results.failed++;
-            results.errors.push(`${name}: 센터가 지정되지 않았습니다`);
-            continue;
-          }
-
           const existingUser = await storage.getUserByUsername(username);
           if (existingUser) {
             results.failed++;
@@ -985,7 +957,7 @@ export async function registerRoutes(
             continue;
           }
 
-          const user = await storage.createUser({
+          await storage.createUser({
             username,
             password: "1234",
             name,
@@ -996,10 +968,6 @@ export async function registerRoutes(
             grade,
             role: UserRole.STUDENT,
           });
-
-          for (const centerId of rowCenterIds) {
-            await storage.addUserToCenter({ userId: user.id, centerId });
-          }
 
           results.success++;
         } catch (error: any) {
@@ -1727,7 +1695,6 @@ export async function registerRoutes(
       const notification = await storage.createTuitionNotification({
         studentId,
         parentId: parentId || null,
-        centerId,
         sentById: senderId,
         calculatedTotal,
         sentAmount,
@@ -3072,7 +3039,6 @@ export async function registerRoutes(
       }
 
       const resource = await storage.createClinicResource({
-        centerId,
         fileName,
         filePath,
         description: description || null,
@@ -3334,7 +3300,6 @@ export async function registerRoutes(
       const { centerId, teacherId, weekStartDate, period, content, useDefault, recordIds } = req.body;
       
       const group = await storage.createClinicSharedInstructionGroup({
-        centerId,
         teacherId,
         weekStartDate,
         period,
@@ -3453,7 +3418,7 @@ export async function registerRoutes(
           continue;
         }
 
-        await storage.createAttendancePin({ studentId: student.id, centerId, pin });
+        await storage.createAttendancePin({ studentId: student.id, pin });
         usedPins.push(pin);
         created.push({ studentId: student.id, pin });
       }
@@ -3496,7 +3461,6 @@ export async function registerRoutes(
         // Create new attendance record with classId
         record = await storage.createAttendanceRecord({
           studentId,
-          centerId,
           classId: classId || undefined,
           checkInDate: today,
           wasLate: isLate || false,
@@ -3587,7 +3551,6 @@ export async function registerRoutes(
         // Create new attendance record with status (no SMS)
         record = await storage.createAttendanceRecord({
           studentId,
-          centerId,
           classId: classId || undefined,
           checkInDate: today,
           wasLate: status === "late",
@@ -3870,7 +3833,7 @@ export async function registerRoutes(
       if (existingForStudent) {
         return res.status(400).json({ error: "이 학생은 이미 출결번호가 있습니다" });
       }
-      const result = await storage.createAttendancePin({ studentId, centerId, pin });
+      const result = await storage.createAttendancePin({ studentId, pin });
       res.json(result);
     } catch (error) {
       res.status(500).json({ error: "Failed to create attendance pin" });
@@ -3973,7 +3936,6 @@ export async function registerRoutes(
       // Create new settings
       const result = await storage.createTeacherCheckInSettings({
         teacherId,
-        centerId,
         checkInCode,
         smsRecipient1: smsRecipient1 || null,
         smsRecipient2: smsRecipient2 || null,
@@ -4282,7 +4244,6 @@ export async function registerRoutes(
       // Create attendance record
       const record = await storage.createAttendanceRecord({
         studentId: pinRecord.studentId,
-        centerId,
         classId: classId || undefined,
         checkInDate: today,
       });
@@ -4600,7 +4561,6 @@ export async function registerRoutes(
         // First punch of the day - always treat as check-in regardless of button pressed
         record = await storage.createTeacherWorkRecord({
           teacherId,
-          centerId,
           workDate: today,
           checkInAt: now,
         });
@@ -4814,7 +4774,7 @@ export async function registerRoutes(
       if (!centerId || !type || !title || !body) {
         return res.status(400).json({ error: "centerId, type, title, and body are required" });
       }
-      const template = await storage.createMessageTemplate({ centerId, type, title, body });
+      const template = await storage.createMessageTemplate({ type, title, body });
       res.json(template);
     } catch (error) {
       res.status(500).json({ error: "Failed to create message template" });
@@ -5051,7 +5011,6 @@ export async function registerRoutes(
       const reservation = await storage.createStudyCafeReservation({
         seatId,
         studentId,
-        centerId,
         startAt: now,
         endAt,
         status: "active",
@@ -5201,7 +5160,6 @@ export async function registerRoutes(
       const fixedSeat = await storage.createStudyCafeFixedSeat({
         seatId,
         studentId,
-        centerId,
         startDate,
         endDate,
         assignedById: actorId,
@@ -5327,7 +5285,6 @@ export async function registerRoutes(
 
       const report = await storage.createStudentMonthlyReport({
         studentId,
-        centerId,
         createdById,
         year,
         month,
@@ -5972,7 +5929,6 @@ export async function registerRoutes(
       }
 
       const todo = await storage.createTodo({
-        centerId,
         creatorId,
         title,
         description: description || null,
@@ -6140,7 +6096,6 @@ export async function registerRoutes(
       const record = await storage.createStudentExitRecord({
         studentId,
         studentName: student.name,
-        centerId,
         exitMonth,
         reasons,
         notes: notes || null,
@@ -6278,12 +6233,12 @@ export async function registerRoutes(
   });
   
   // Helper function to sync marketing campaigns to financial records
-  const syncMarketingToFinance = async (yearMonth: string) => {
+  const syncMarketingToFinance = async (campaignCenterId: string, yearMonth: string) => {
     try {
       // Get all campaigns for this center and year
       const year = parseInt(yearMonth.split("-")[0]);
       const month = parseInt(yearMonth.split("-")[1]);
-      const campaigns = await storage.getMarketingCampaigns(centerId, year);
+      const campaigns = await storage.getMarketingCampaigns(campaignCenterId, year);
       
       // Calculate total budget for this month from campaigns
       let totalBudget = 0;
@@ -6329,7 +6284,7 @@ export async function registerRoutes(
       }
       
       // Update or create financial record
-      const existingRecord = await storage.getMonthlyFinancialRecord(centerId, yearMonth);
+      const existingRecord = await storage.getMonthlyFinancialRecord(campaignCenterId, yearMonth);
       
       if (existingRecord) {
         await storage.updateMonthlyFinancialRecord(existingRecord.id, {
@@ -6338,7 +6293,6 @@ export async function registerRoutes(
         });
       } else if (totalBudget > 0) {
         await storage.createMonthlyFinancialRecord({
-          centerId,
           yearMonth,
           createdBy: "system",
           revenueTuition: 0,
@@ -6369,7 +6323,6 @@ export async function registerRoutes(
       }
       
       const campaign = await storage.createMarketingCampaign({
-        centerId,
         name,
         channel,
         startDate,
@@ -6838,7 +6791,6 @@ export async function registerRoutes(
       } else {
         const created = await storage.createTeacherSalarySettings({
           teacherId,
-          centerId,
           baseSalary: baseSalary || 0,
           classBasePay: classBasePay || 0,
           classBasePayMiddle: classBasePayMiddle || 0,
@@ -6928,7 +6880,6 @@ export async function registerRoutes(
       
       const adjustment = await storage.createTeacherSalaryAdjustment({
         teacherId,
-        centerId,
         yearMonth,
         amount: parseInt(amount),
         description,
@@ -7181,7 +7132,6 @@ export async function registerRoutes(
       
       const purchase = await storage.createStudentTextbookPurchase({
         studentId,
-        centerId,
         textbookName,
         price: price || 0,
         purchaseDate: purchaseDate ? new Date(purchaseDate) : new Date(),
