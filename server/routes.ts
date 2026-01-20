@@ -374,12 +374,8 @@ export async function registerRoutes(
 
   app.get("/api/users", async (req, res) => {
     try {
-      const rawCenterId = req.query.centerId as string | undefined;
-      // Handle "undefined" and "null" strings as no filter
-      const centerId = (rawCenterId && rawCenterId !== "undefined" && rawCenterId !== "null") 
-        ? rawCenterId 
-        : undefined;
-      const users = await storage.getUsers(centerId);
+      // Global mode - get all users
+      const users = await storage.getUsersGlobal();
       res.json(users);
     } catch (error) {
       res.status(500).json({ error: "Failed to get users" });
@@ -1124,15 +1120,8 @@ export async function registerRoutes(
   // Classes
   app.get("/api/classes", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string | undefined;
-      // Validate center exists if centerId provided
-      if (centerId) {
-        const center = await storage.getCenter(centerId);
-        if (!center) {
-          return res.json([]); // Return empty array for invalid center
-        }
-      }
-      const classes = await storage.getClasses(centerId);
+      // Single-academy mode: get all classes
+      const classes = await storage.getClassesGlobal();
       res.json(classes);
     } catch (error) {
       console.error("[GET classes] Error:", error);
@@ -1227,19 +1216,13 @@ export async function registerRoutes(
   // Enrollments
   app.get("/api/enrollments", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
-      if (!centerId) {
-        return res.status(400).json({ error: "Center ID required" });
-      }
+      // Get all classes (global)
+      const allClasses = await storage.getClassesGlobal();
+      const classMap = new Map(allClasses.map((c: any) => [c.id, c]));
       
-      // Get all classes for the center
-      const allClasses = await storage.getClasses();
-      const centerClasses = allClasses.filter((c: any) => c.centerId === centerId);
-      const classMap = new Map(centerClasses.map((c: any) => [c.id, c]));
-      
-      // Get all users for the center to find students
-      const centerUsers = await storage.getCenterUsers(centerId);
-      const students = centerUsers.filter(u => u.role === UserRole.STUDENT);
+      // Get all students (global)
+      const allUsers = await storage.getUsersGlobal();
+      const students = allUsers.filter(u => u.role === UserRole.STUDENT);
       
       // Get enrollments for each student
       const allEnrollments = [];
@@ -2019,20 +2002,9 @@ export async function registerRoutes(
   // Homework
   app.get("/api/homework", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string | undefined;
-      if (centerId) {
-        // Legacy support: filter by center if provided
-        const center = await storage.getCenter(centerId);
-        if (!center) {
-          return res.json([]); // Return empty array for invalid center
-        }
-        const homework = await storage.getHomeworkByCenter(centerId);
-        res.json(homework);
-      } else {
-        // Single-academy mode: return all homework
-        const homework = await storage.getAllHomework();
-        res.json(homework);
-      }
+      // Single-academy mode: return all homework
+      const homework = await storage.getAllHomework();
+      res.json(homework);
     } catch (error: any) {
       console.error("[GET homework] Error:", error?.message || error);
       res.status(500).json({ error: "Failed to get homework", details: error?.message });
@@ -2100,10 +2072,10 @@ export async function registerRoutes(
       }
       
       const classData = await storage.getClass(homework.classId);
-      console.log(`[UNSUBMITTED] Class: ${classData?.name}, centerId: ${classData?.centerId}`);
+      console.log(`[UNSUBMITTED] Class: ${classData?.name}`);
       const classStudents = await storage.getClassStudents(homework.classId);
       console.log(`[UNSUBMITTED] Class students count: ${classStudents.length}`, classStudents.map(s => s.name));
-      const allSubmissions = await storage.getSubmissionsByCenter(classData?.centerId || "");
+      const allSubmissions = await storage.getAllSubmissions();
       
       const homeworkSubmissions = allSubmissions.filter((s: any) => s.homeworkId === homework.id);
       console.log(`[UNSUBMITTED] Submissions for this homework: ${homeworkSubmissions.length}`);
@@ -2121,15 +2093,10 @@ export async function registerRoutes(
 
   app.get("/api/homework/submissions", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string | undefined;
-      console.log(`[GET submissions] centerId: ${centerId}`);
-      if (centerId) {
-        const submissions = await storage.getSubmissionsByCenter(centerId);
-        console.log(`[GET submissions] Found ${submissions.length} submissions`);
-        res.json(submissions);
-      } else {
-        res.json([]);
-      }
+      // Single-academy mode: return all submissions
+      const submissions = await storage.getAllSubmissions();
+      console.log(`[GET submissions] Found ${submissions.length} submissions`);
+      res.json(submissions);
     } catch (error: any) {
       console.error("[GET submissions] Error:", error?.message || error, error?.stack);
       res.status(500).json({ error: "Failed to get submissions", details: error?.message });
@@ -2311,8 +2278,8 @@ export async function registerRoutes(
   // Class Videos
   app.get("/api/class-videos", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string | undefined;
-      const videos = await storage.getClassVideos(centerId);
+      // Single-academy mode: get all class videos
+      const videos = await storage.getClassVideosGlobal();
       res.json(videos);
     } catch (error) {
       res.status(500).json({ error: "Failed to get videos" });
@@ -2619,14 +2586,10 @@ export async function registerRoutes(
 
   // ===== NEW CLINIC SYSTEM (Weekly Workflow) =====
 
-  // Get clinic students by center
+  // Get clinic students (global)
   app.get("/api/clinic-students", async (req, res) => {
     try {
-      const { centerId } = req.query;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      const students = await storage.getClinicStudents(centerId as string);
+      const students = await storage.getClinicStudentsGlobal();
       res.json(students);
     } catch (error) {
       res.status(500).json({ error: "Failed to get clinic students" });
@@ -2687,13 +2650,8 @@ export async function registerRoutes(
   // Sync students enrolled in clinic classes to clinic_students table
   app.post("/api/clinic-students/sync", async (req, res) => {
     try {
-      const { centerId } = req.body;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-
-      // Get all clinic-type classes in this center
-      const allClasses = await storage.getClasses(centerId);
+      // Get all clinic-type classes (global)
+      const allClasses = await storage.getClassesGlobal();
       const clinicClasses = allClasses.filter(c => c.classType === "high_clinic" || c.classType === "middle_clinic");
 
       let syncedCount = 0;
@@ -2775,22 +2733,20 @@ export async function registerRoutes(
   // Get weekly records for a clinic student
   app.get("/api/clinic-weekly-records", async (req, res) => {
     try {
-      const { clinicStudentId, centerId, weekStartDate, year, month } = req.query;
+      const { clinicStudentId, weekStartDate, year, month } = req.query;
       
-      // Month-based fetching (for viewing all records in a month)
-      if (centerId && year && month) {
-        const records = await storage.getClinicWeeklyRecordsByMonth(
-          centerId as string,
+      // Month-based fetching (for viewing all records in a month - global)
+      if (year && month) {
+        const records = await storage.getClinicWeeklyRecordsByMonthGlobal(
           parseInt(year as string),
           parseInt(month as string)
         );
         return res.json(records);
       }
       
-      // Week-based fetching (legacy, for specific week)
-      if (centerId && weekStartDate) {
-        const records = await storage.getClinicWeeklyRecordsByCenter(
-          centerId as string,
+      // Week-based fetching (global)
+      if (weekStartDate && !clinicStudentId) {
+        const records = await storage.getClinicWeeklyRecordsByCenterGlobal(
           weekStartDate as string
         );
         return res.json(records);
@@ -2804,7 +2760,7 @@ export async function registerRoutes(
         return res.json(records);
       }
       
-      res.status(400).json({ error: "clinicStudentId or centerId is required" });
+      res.status(400).json({ error: "clinicStudentId or weekStartDate is required" });
     } catch (error) {
       res.status(500).json({ error: "Failed to get weekly records" });
     }
@@ -2826,17 +2782,14 @@ export async function registerRoutes(
   // Create weekly record
   app.post("/api/clinic-weekly-records", async (req, res) => {
     try {
-      const { clinicStudentId, centerId, weekStartDate } = req.body;
+      const { clinicStudentId, weekStartDate } = req.body;
       
-      // Validate that the clinic student exists and belongs to the specified center
+      // Validate that the clinic student exists
       let clinicStudent = null;
       if (clinicStudentId) {
         clinicStudent = await storage.getClinicStudent(clinicStudentId);
         if (!clinicStudent) {
           return res.status(404).json({ error: "Clinic student not found" });
-        }
-        if (centerId && clinicStudent.centerId !== centerId) {
-          return res.status(403).json({ error: "Clinic student does not belong to the specified center" });
         }
       }
       
@@ -2919,13 +2872,13 @@ export async function registerRoutes(
   // Batch create weekly records for all clinic students (for a specific week)
   app.post("/api/clinic-weekly-records/batch", async (req, res) => {
     try {
-      const { centerId, weekStartDate } = req.body;
-      if (!centerId || !weekStartDate) {
-        return res.status(400).json({ error: "centerId and weekStartDate are required" });
+      const { weekStartDate } = req.body;
+      if (!weekStartDate) {
+        return res.status(400).json({ error: "weekStartDate is required" });
       }
 
-      const clinicStudentsList = await storage.getClinicStudents(centerId);
-      const existingRecords = await storage.getClinicWeeklyRecordsByCenter(centerId, weekStartDate);
+      const clinicStudentsList = await storage.getClinicStudentsGlobal();
+      const existingRecords = await storage.getClinicWeeklyRecordsByCenterGlobal(weekStartDate);
       const existingClinicStudentIds = new Set(existingRecords.map(r => r.clinicStudentId));
 
       // Get previous week's records to carry over all instructions
@@ -2934,7 +2887,7 @@ export async function registerRoutes(
       previousWeekDate.setDate(previousWeekDate.getDate() - 7);
       const previousWeekStartDate = previousWeekDate.toISOString().split('T')[0];
       
-      const previousRecords = await storage.getClinicWeeklyRecordsByCenter(centerId, previousWeekStartDate);
+      const previousRecords = await storage.getClinicWeeklyRecordsByCenterGlobal(previousWeekStartDate);
       const previousRecordsMap = new Map(previousRecords.map(r => [r.clinicStudentId, r]));
 
       const newRecords = await Promise.all(
@@ -2961,9 +2914,9 @@ export async function registerRoutes(
       const cutoffDate = fiveWeeksAgo.toISOString().split('T')[0];
       
       try {
-        const deletedCount = await storage.deleteOldClinicWeeklyRecords(centerId, cutoffDate);
+        const deletedCount = await storage.deleteOldClinicWeeklyRecordsGlobal(cutoffDate);
         if (deletedCount > 0) {
-          console.log(`[CLINIC] Auto-deleted ${deletedCount} records older than ${cutoffDate} for center ${centerId}`);
+          console.log(`[CLINIC] Auto-deleted ${deletedCount} records older than ${cutoffDate}`);
         }
       } catch (cleanupError) {
         console.error("[CLINIC] Failed to cleanup old records:", cleanupError);
@@ -2979,11 +2932,8 @@ export async function registerRoutes(
   // ===== Clinic Resources (자료 모음) =====
   app.get("/api/clinic-resources", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      const resources = await storage.getClinicResources(centerId);
+      // Single-academy mode: get all clinic resources
+      const resources = await storage.getClinicResourcesGlobal();
       res.json(resources);
     } catch (error) {
       res.status(500).json({ error: "Failed to get clinic resources" });
@@ -2997,9 +2947,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No file uploaded" });
       }
       
-      const { centerId, description, isPermanent, weekStartDate, uploadedById } = req.body;
-      if (!centerId || !uploadedById) {
-        return res.status(400).json({ error: "centerId and uploadedById are required" });
+      const { description, isPermanent, weekStartDate, uploadedById } = req.body;
+      if (!uploadedById) {
+        return res.status(400).json({ error: "uploadedById is required" });
       }
 
       // Decode Korean filename - try UTF-8 first, then latin1 to UTF-8 conversion
@@ -3025,7 +2975,7 @@ export async function registerRoutes(
       try {
         const fileExt = path.extname(fileName).toLowerCase().replace('.', '');
         const uniqueId = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const objectKey = `clinic-resources/${centerId}/${uniqueId}.${fileExt}`;
+        const objectKey = `clinic-resources/${uniqueId}.${fileExt}`;
         
         await r2Client.send(new PutObjectCommand({
           Bucket: R2_BUCKET_NAME,
@@ -3383,20 +3333,15 @@ export async function registerRoutes(
     res.json({ configured });
   });
 
-  // Auto-generate attendance PINs for all students in center
+  // Auto-generate attendance PINs for all students
   app.post("/api/attendance-pins/auto-generate", async (req, res) => {
     try {
-      const { centerId } = req.body;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
+      // Get all students (global)
+      const allUsers = await storage.getUsersGlobal();
+      const students = allUsers.filter((u: User) => u.role === UserRole.STUDENT);
 
-      // Get all students in this center
-      const centerUsers = await storage.getUsers(centerId);
-      const students = centerUsers.filter((u: User) => u.role === UserRole.STUDENT);
-
-      // Get existing PINs for this center
-      const existingPins = await storage.getAttendancePins(centerId);
+      // Get existing PINs (global)
+      const existingPins = await storage.getAttendancePinsGlobal();
       const usedPins = existingPins.map((p) => p.pin);
       const studentsWithPins = new Set(existingPins.map((p) => p.studentId));
 
@@ -3437,9 +3382,9 @@ export async function registerRoutes(
   // Manual attendance check-in by teacher
   app.post("/api/attendance/manual-checkin", async (req, res) => {
     try {
-      const { studentId, centerId, classId, isLate } = req.body;
-      if (!studentId || !centerId) {
-        return res.status(400).json({ error: "studentId and centerId are required" });
+      const { studentId, classId, isLate } = req.body;
+      if (!studentId) {
+        return res.status(400).json({ error: "studentId is required" });
       }
 
       const today = new Date().toISOString().split("T")[0];
@@ -3473,11 +3418,10 @@ export async function registerRoutes(
 
       // Get student info for notification
       const student = await storage.getUser(studentId);
-      const center = await storage.getCenter(centerId);
       
-      console.log("[Attendance] Manual check-in:", { studentId, centerId, isLate, centerName: center?.name });
+      console.log("[Attendance] Manual check-in:", { studentId, isLate });
       console.log("[Attendance] Student info:", { name: student?.name, motherPhone: student?.motherPhone, fatherPhone: student?.fatherPhone });
-      const solapiConfigured = await isSolapiConfigured(center?.name);
+      const solapiConfigured = await isSolapiConfigured();
       console.log("[Attendance] SOLAPI configured:", solapiConfigured);
       
       // Send notification if configured
@@ -3485,7 +3429,7 @@ export async function registerRoutes(
         const parentPhone = student.motherPhone || student.fatherPhone;
         if (parentPhone) {
           // Get custom message templates
-          const templates = await storage.getMessageTemplates(centerId);
+          const templates = await storage.getMessageTemplatesGlobal();
           const checkInTemplate = templates.find((t) => t.type === "check_in");
           const lateTemplate = templates.find((t) => t.type === "late");
 
@@ -3503,11 +3447,11 @@ export async function registerRoutes(
 
           if (isLate) {
             const timeStr = record.checkInAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
-            sendLateNotification(student.name, timeStr, parentPhone, center?.name, lateTemplate?.body)
+            sendLateNotification(student.name, timeStr, parentPhone, undefined, lateTemplate?.body)
               .then(logNotification)
               .catch(err => console.error("Notification error:", err));
           } else {
-            sendAttendanceNotification(student.name, record.checkInAt, parentPhone, center?.name, checkInTemplate?.body)
+            sendAttendanceNotification(student.name, record.checkInAt, parentPhone, undefined, checkInTemplate?.body)
               .then(logNotification)
               .catch(err => console.error("Notification error:", err));
           }
@@ -3524,9 +3468,9 @@ export async function registerRoutes(
   // Update attendance status only (without sending SMS)
   app.patch("/api/attendance/update-status", async (req, res) => {
     try {
-      const { studentId, centerId, classId, status } = req.body;
-      if (!studentId || !centerId || !status) {
-        return res.status(400).json({ error: "studentId, centerId, and status are required" });
+      const { studentId, classId, status } = req.body;
+      if (!studentId || !status) {
+        return res.status(400).json({ error: "studentId and status are required" });
       }
 
       const validStatuses = ["pending", "present", "late", "absent"];

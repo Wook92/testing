@@ -189,6 +189,7 @@ export interface IStorage {
   deleteAssessment(id: string): Promise<void>;
 
   getClassVideos(centerId?: string): Promise<ClassVideo[]>;
+  getClassVideosGlobal(): Promise<ClassVideo[]>;
   createClassVideo(video: InsertClassVideo): Promise<ClassVideo>;
   updateClassVideo(id: string, data: Partial<InsertClassVideo>): Promise<ClassVideo>;
   deleteClassVideo(id: string): Promise<void>;
@@ -229,6 +230,7 @@ export interface IStorage {
   getClinicStudentByStudentAndCenter(studentId: string, centerId: string): Promise<ClinicStudent | undefined>;
   getClinicStudentByStudentCenterAndType(studentId: string, centerId: string, clinicType: string): Promise<ClinicStudent | undefined>;
   getClinicStudents(centerId: string): Promise<ClinicStudentWithDetails[]>;
+  getClinicStudentsGlobal(): Promise<ClinicStudentWithDetails[]>;
   createClinicStudent(student: InsertClinicStudent): Promise<ClinicStudent>;
   updateClinicStudent(id: string, data: Partial<InsertClinicStudent>): Promise<ClinicStudent>;
   deleteClinicStudent(id: string): Promise<void>;
@@ -237,14 +239,18 @@ export interface IStorage {
   getClinicWeeklyRecords(clinicStudentId: string, weekStartDate?: string): Promise<ClinicWeeklyRecord[]>;
   getClinicWeeklyRecordsByCenter(centerId: string, weekStartDate: string): Promise<(ClinicWeeklyRecord & { clinicStudent?: ClinicStudentWithDetails })[]>;
   getClinicWeeklyRecordsByMonth(centerId: string, year: number, month: number): Promise<(ClinicWeeklyRecord & { clinicStudent?: ClinicStudentWithDetails })[]>;
+  getClinicWeeklyRecordsByCenterGlobal(weekStartDate: string): Promise<(ClinicWeeklyRecord & { clinicStudent?: ClinicStudentWithDetails })[]>;
+  getClinicWeeklyRecordsByMonthGlobal(year: number, month: number): Promise<(ClinicWeeklyRecord & { clinicStudent?: ClinicStudentWithDetails })[]>;
   createClinicWeeklyRecord(record: InsertClinicWeeklyRecord): Promise<ClinicWeeklyRecord>;
   updateClinicWeeklyRecord(id: string, data: Partial<InsertClinicWeeklyRecord>): Promise<ClinicWeeklyRecord>;
   deleteClinicWeeklyRecord(id: string): Promise<void>;
   deleteOldClinicWeeklyRecords(centerId: string, beforeDate: string): Promise<number>;
+  deleteOldClinicWeeklyRecordsGlobal(beforeDate: string): Promise<number>;
 
   // Clinic Resources (자료 모음)
   getClinicResource(id: string): Promise<ClinicResource | undefined>;
   getClinicResources(centerId: string): Promise<ClinicResourceWithUploader[]>;
+  getClinicResourcesGlobal(): Promise<ClinicResourceWithUploader[]>;
   createClinicResource(resource: InsertClinicResource): Promise<ClinicResource>;
   deleteClinicResource(id: string): Promise<void>;
   deleteOldTemporaryClinicResources(beforeDate: string): Promise<{ count: number; filePaths: string[] }>;
@@ -260,6 +266,7 @@ export interface IStorage {
   getAttendancePinByPinGlobal(pin: string): Promise<AttendancePinWithStudent | undefined>;
   getAttendancePins(centerId: string): Promise<AttendancePinWithStudent[]>;
   getAllAttendancePins(): Promise<AttendancePinWithStudent[]>;
+  getAttendancePinsGlobal(): Promise<AttendancePinWithStudent[]>;
   getAttendancePinByStudent(studentId: string, centerId: string): Promise<AttendancePin | undefined>;
   getAttendancePinByStudentGlobal(studentId: string): Promise<AttendancePin | undefined>;
   createAttendancePin(data: InsertAttendancePin): Promise<AttendancePin>;
@@ -300,6 +307,7 @@ export interface IStorage {
   deleteOldTeacherWorkRecords(beforeDate: string): Promise<number>;
 
   getMessageTemplates(centerId: string): Promise<MessageTemplate[]>;
+  getMessageTemplatesGlobal(): Promise<MessageTemplate[]>;
   getMessageTemplate(id: string): Promise<MessageTemplate | undefined>;
   createMessageTemplate(data: InsertMessageTemplate): Promise<MessageTemplate>;
   updateMessageTemplate(id: string, data: Partial<InsertMessageTemplate>): Promise<MessageTemplate>;
@@ -1061,6 +1069,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(classVideos).where(inArray(classVideos.classId, classIds));
   }
 
+  async getClassVideosGlobal(): Promise<ClassVideo[]> {
+    return await db.select().from(classVideos);
+  }
+
   async createClassVideo(video: InsertClassVideo): Promise<ClassVideo> {
     const result = await db.insert(classVideos).values(video).returning();
     return result[0];
@@ -1290,6 +1302,19 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
+  async getClinicStudentsGlobal(): Promise<ClinicStudentWithDetails[]> {
+    const allClinicStudents = await db.select().from(clinicStudents);
+
+    return Promise.all(allClinicStudents.map(async (cs) => {
+      const [student, regularTeacher, clinicTeacher] = await Promise.all([
+        this.getUser(cs.studentId),
+        this.getUser(cs.regularTeacherId),
+        cs.clinicTeacherId ? this.getUser(cs.clinicTeacherId) : Promise.resolve(undefined),
+      ]);
+      return { ...cs, student, regularTeacher, clinicTeacher };
+    }));
+  }
+
   async createClinicStudent(student: InsertClinicStudent): Promise<ClinicStudent> {
     const result = await db.insert(clinicStudents).values(student).returning();
     return result[0];
@@ -1344,6 +1369,24 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
+  async getClinicWeeklyRecordsByCenterGlobal(weekStartDate: string): Promise<(ClinicWeeklyRecord & { clinicStudent?: ClinicStudentWithDetails })[]> {
+    const clinicStudentsList = await this.getClinicStudentsGlobal();
+    const clinicStudentIds = clinicStudentsList.map(cs => cs.id);
+    
+    if (clinicStudentIds.length === 0) return [];
+    
+    const records = await db.select().from(clinicWeeklyRecords)
+      .where(and(
+        inArray(clinicWeeklyRecords.clinicStudentId, clinicStudentIds),
+        eq(clinicWeeklyRecords.weekStartDate, weekStartDate)
+      ));
+
+    return records.map(record => ({
+      ...record,
+      clinicStudent: clinicStudentsList.find(cs => cs.id === record.clinicStudentId),
+    }));
+  }
+
   async getClinicWeeklyRecordsByMonth(centerId: string, year: number, month: number): Promise<(ClinicWeeklyRecord & { clinicStudent?: ClinicStudentWithDetails })[]> {
     const clinicStudentsList = await this.getClinicStudents(centerId);
     const clinicStudentIds = clinicStudentsList.map(cs => cs.id);
@@ -1368,6 +1411,44 @@ export class DatabaseStorage implements IStorage {
     lastMonday.setDate(lastDayOfMonth.getDate() - daysToLastMonday);
     
     // Format dates for comparison
+    const formatDate = (d: Date) => {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const startDate = formatDate(firstMonday);
+    const endDate = formatDate(lastMonday);
+    
+    const records = await db.select().from(clinicWeeklyRecords)
+      .where(and(
+        inArray(clinicWeeklyRecords.clinicStudentId, clinicStudentIds),
+        gte(clinicWeeklyRecords.weekStartDate, startDate),
+        lte(clinicWeeklyRecords.weekStartDate, endDate)
+      ));
+
+    return records.map(record => ({
+      ...record,
+      clinicStudent: clinicStudentsList.find(cs => cs.id === record.clinicStudentId),
+    }));
+  }
+
+  async getClinicWeeklyRecordsByMonthGlobal(year: number, month: number): Promise<(ClinicWeeklyRecord & { clinicStudent?: ClinicStudentWithDetails })[]> {
+    const clinicStudentsList = await this.getClinicStudentsGlobal();
+    const clinicStudentIds = clinicStudentsList.map(cs => cs.id);
+    
+    if (clinicStudentIds.length === 0) return [];
+    
+    const firstDayOfMonth = new Date(year, month - 1, 1);
+    const lastDayOfMonth = new Date(year, month, 0);
+    
+    const firstMonday = new Date(firstDayOfMonth);
+    const dayOfWeek = firstDayOfMonth.getDay();
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    firstMonday.setDate(firstDayOfMonth.getDate() - daysToMonday);
+    
+    const lastMonday = new Date(lastDayOfMonth);
+    const lastDayOfWeek = lastDayOfMonth.getDay();
+    const daysToLastMonday = lastDayOfWeek === 0 ? 6 : lastDayOfWeek - 1;
+    lastMonday.setDate(lastDayOfMonth.getDate() - daysToLastMonday);
+    
     const formatDate = (d: Date) => {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
@@ -1447,6 +1528,22 @@ export class DatabaseStorage implements IStorage {
     return result.length;
   }
 
+  async deleteOldClinicWeeklyRecordsGlobal(beforeDate: string): Promise<number> {
+    const oldRecords = await db.select({ id: clinicWeeklyRecords.id })
+      .from(clinicWeeklyRecords)
+      .where(lt(clinicWeeklyRecords.weekStartDate, beforeDate));
+    
+    for (const record of oldRecords) {
+      await this.deleteClinicWeeklyRecordFilesByRecordId(record.id);
+    }
+    
+    const result = await db.delete(clinicWeeklyRecords)
+      .where(lt(clinicWeeklyRecords.weekStartDate, beforeDate))
+      .returning();
+    
+    return result.length;
+  }
+
   // Clinic Resources
   async getClinicResource(id: string): Promise<ClinicResource | undefined> {
     const result = await db.select().from(clinicResources)
@@ -1458,6 +1555,21 @@ export class DatabaseStorage implements IStorage {
   async getClinicResources(centerId: string): Promise<ClinicResourceWithUploader[]> {
     const resources = await db.select().from(clinicResources)
       .where(eq(clinicResources.centerId, centerId));
+    
+    const uploaderIds = Array.from(new Set(resources.map(r => r.uploadedById)));
+    const uploaders = uploaderIds.length > 0 
+      ? await db.select().from(users).where(inArray(users.id, uploaderIds))
+      : [];
+    const uploaderMap = new Map(uploaders.map(u => [u.id, u]));
+    
+    return resources.map(r => ({
+      ...r,
+      uploader: uploaderMap.get(r.uploadedById),
+    }));
+  }
+
+  async getClinicResourcesGlobal(): Promise<ClinicResourceWithUploader[]> {
+    const resources = await db.select().from(clinicResources);
     
     const uploaderIds = Array.from(new Set(resources.map(r => r.uploadedById)));
     const uploaders = uploaderIds.length > 0 
@@ -1775,6 +1887,10 @@ export class DatabaseStorage implements IStorage {
     return pins.map(p => ({ ...p, student: studentsMap.get(p.studentId) }));
   }
 
+  async getAttendancePinsGlobal(): Promise<AttendancePinWithStudent[]> {
+    return this.getAllAttendancePins();
+  }
+
   async getAttendancePinByPinGlobal(pin: string): Promise<AttendancePinWithStudent | undefined> {
     const result = await db.select().from(attendancePins)
       .where(and(
@@ -2060,6 +2176,10 @@ export class DatabaseStorage implements IStorage {
 
   async getMessageTemplates(centerId: string): Promise<MessageTemplate[]> {
     return await db.select().from(messageTemplates).where(eq(messageTemplates.centerId, centerId));
+  }
+
+  async getMessageTemplatesGlobal(): Promise<MessageTemplate[]> {
+    return await db.select().from(messageTemplates);
   }
 
   async getMessageTemplate(id: string): Promise<MessageTemplate | undefined> {
