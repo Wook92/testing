@@ -754,25 +754,25 @@ function CreateTodoDialog({ onClose, initialDate, userId, isAdminOrPrincipal, st
 
           {isAdminOrPrincipal && allAssignees.length > 0 && (
             <div className="space-y-2">
-              <Label>해야할 선생님</Label>
-              <Select
-                value={selectedAssignees[0] || ""}
-                onValueChange={(value) => setSelectedAssignees([value])}
-              >
-                <SelectTrigger data-testid="select-assignee">
-                  <SelectValue placeholder="선생님 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allAssignees.map((t) => (
-                    <SelectItem key={t.id} value={t.id} data-testid={`assignee-${t.id}`}>
+              <Label>해야할 선생님 (복수 선택 가능)</Label>
+              <div className="border rounded-md p-3 max-h-[150px] overflow-y-auto space-y-2">
+                {allAssignees.map((t) => (
+                  <div key={t.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`assignee-${t.id}`}
+                      checked={selectedAssignees.includes(t.id)}
+                      onCheckedChange={() => toggleAssignee(t.id)}
+                      data-testid={`assignee-${t.id}`}
+                    />
+                    <Label htmlFor={`assignee-${t.id}`} className="text-sm cursor-pointer font-normal">
                       {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedAssignees.length > 1 && (
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {selectedAssignees.length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {selectedAssignees.slice(1).map((id) => {
+                  {selectedAssignees.map((id) => {
                     const teacher = allAssignees.find(t => t.id === id);
                     return teacher ? (
                       <Badge key={id} variant="secondary" className="text-xs">
@@ -986,22 +986,34 @@ function EditTodoDialog({ todo, onClose, isAdminOrPrincipal, staff }: EditTodoDi
 
           {isAdminOrPrincipal && allAssignees.length > 0 && (
             <div className="space-y-2">
-              <Label>해야할 선생님</Label>
-              <Select
-                value={selectedAssignees[0] || ""}
-                onValueChange={(value) => setSelectedAssignees([value])}
-              >
-                <SelectTrigger data-testid="select-edit-assignee">
-                  <SelectValue placeholder="선생님 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allAssignees.map((t) => (
-                    <SelectItem key={t.id} value={t.id} data-testid={`edit-assignee-${t.id}`}>
+              <Label>해야할 선생님 (복수 선택 가능)</Label>
+              <div className="border rounded-md p-3 max-h-[150px] overflow-y-auto space-y-2">
+                {allAssignees.map((t) => (
+                  <div key={t.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`edit-assignee-${t.id}`}
+                      checked={selectedAssignees.includes(t.id)}
+                      onCheckedChange={() => toggleAssignee(t.id)}
+                      data-testid={`edit-assignee-${t.id}`}
+                    />
+                    <Label htmlFor={`edit-assignee-${t.id}`} className="text-sm cursor-pointer font-normal">
                       {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {selectedAssignees.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedAssignees.map((id) => {
+                    const teacher = allAssignees.find(t => t.id === id);
+                    return teacher ? (
+                      <Badge key={id} variant="secondary" className="text-xs">
+                        {teacher.name}
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
