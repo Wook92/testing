@@ -5870,22 +5870,17 @@ export async function registerRoutes(
 
   // Todo APIs (투두리스트)
   
-  // Get all todos for a center (with optional assignee filter)
+  // Get all todos (with optional assignee filter)
   app.get("/api/todos", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
       const assigneeId = req.query.assigneeId as string | undefined;
       const date = req.query.date as string | undefined;
-      
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
 
       let todos;
       if (date) {
-        todos = await storage.getTodosByDate(centerId, date, assigneeId);
+        todos = await storage.getTodosByDateGlobal(date, assigneeId);
       } else {
-        todos = await storage.getTodos(centerId, assigneeId);
+        todos = await storage.getTodosGlobal(assigneeId);
       }
 
       res.json(todos);
@@ -5911,10 +5906,10 @@ export async function registerRoutes(
   // Create a new todo
   app.post("/api/todos", async (req, res) => {
     try {
-      const { creatorId, centerId, title, description, startDate, dueDate, priority, recurrence, assigneeIds } = req.body;
+      const { creatorId, title, description, startDate, dueDate, priority, recurrence, assigneeIds } = req.body;
       
-      if (!creatorId || !centerId || !title || !dueDate) {
-        return res.status(400).json({ error: "creatorId, centerId, title, and dueDate are required" });
+      if (!creatorId || !title || !dueDate) {
+        return res.status(400).json({ error: "creatorId, title, and dueDate are required" });
       }
 
       const creator = await storage.getUser(creatorId);

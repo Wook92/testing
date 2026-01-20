@@ -2767,6 +2767,83 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  async getTodosGlobal(assigneeId?: string): Promise<TodoWithDetails[]> {
+    const allTodos = await db.select().from(todos)
+      .where(eq(todos.isActive, true))
+      .orderBy(desc(todos.createdAt));
+
+    if (allTodos.length === 0) return [];
+
+    const todoIds = allTodos.map(t => t.id);
+    
+    const allAssignees = await db.select().from(todoAssignees)
+      .where(inArray(todoAssignees.todoId, todoIds));
+    
+    const creatorIds = allTodos.map(t => t.creatorId);
+    const assigneeUserIds = allAssignees.map(a => a.assigneeId);
+    const allUserIds = Array.from(new Set([...creatorIds, ...assigneeUserIds]));
+    const allUsers = allUserIds.length > 0 
+      ? await db.select().from(users).where(inArray(users.id, allUserIds))
+      : [];
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    
+    const assigneesByTodoId = new Map<string, (TodoAssignee & { user?: User })[]>();
+    for (const assignee of allAssignees) {
+      if (!assigneesByTodoId.has(assignee.todoId)) {
+        assigneesByTodoId.set(assignee.todoId, []);
+      }
+      assigneesByTodoId.get(assignee.todoId)!.push({
+        ...assignee,
+        user: userMap.get(assignee.assigneeId),
+      });
+    }
+
+    const result: TodoWithDetails[] = [];
+    for (const todo of allTodos) {
+      const assigneesList = assigneesByTodoId.get(todo.id) || [];
+      
+      if (assigneeId) {
+        const isAssigned = assigneesList.some(a => a.assigneeId === assigneeId);
+        if (!isAssigned) continue;
+      }
+
+      result.push({
+        ...todo,
+        creator: userMap.get(todo.creatorId),
+        assignees: assigneesList,
+      });
+    }
+
+    return result;
+  }
+
+  async getTodosByDateGlobal(date: string, assigneeId?: string): Promise<TodoWithDetails[]> {
+    const allTodos = await this.getTodosGlobal(assigneeId);
+    
+    return allTodos.filter(todo => {
+      if (todo.recurrence === "none") {
+        return todo.dueDate === date;
+      }
+      
+      const anchor = todo.recurrenceAnchorDate || todo.dueDate;
+      const anchorDate = new Date(anchor);
+      const targetDate = new Date(date);
+      
+      if (targetDate < anchorDate) return false;
+      
+      if (todo.recurrence === "weekly") {
+        const diffDays = Math.floor((targetDate.getTime() - anchorDate.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays % 7 === 0;
+      }
+      
+      if (todo.recurrence === "monthly") {
+        return anchorDate.getDate() === targetDate.getDate();
+      }
+      
+      return false;
+    });
+  }
+
   async createTodo(todo: InsertTodo, assigneeIds: string[]): Promise<TodoWithDetails> {
     const result = await db.insert(todos).values({
       ...todo,
