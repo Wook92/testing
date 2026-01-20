@@ -723,8 +723,34 @@ ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "class_level" text DEFAULT 'middl
 ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "monthly_plan" text;
 ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "weekly_plan" text;
 
--- Fix center_id to be nullable for single-academy mode
+-- Fix center_id to be nullable for single-academy mode (all tables that have center_id)
 ALTER TABLE "classes" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "todos" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "attendance_records" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "attendance_pins" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "clinic_students" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "message_templates" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "student_monthly_reports" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "teacher_work_records" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "announcements" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "clinic_assignments" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "clinic_resources" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "clinic_shared_instruction_groups" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "marketing_campaigns" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "monthly_financial_records" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "monthly_student_snapshots" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "solapi_credentials" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "student_exit_records" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "student_textbook_purchases" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "study_cafe_fixed_seats" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "study_cafe_reservations" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "study_cafe_seats" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "study_cafe_settings" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "teacher_check_in_settings" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "teacher_salary_adjustments" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "teacher_salary_settings" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "tuition_guidances" ALTER COLUMN "center_id" DROP NOT NULL;
+ALTER TABLE "tuition_notifications" ALTER COLUMN "center_id" DROP NOT NULL;
 
 -- Student Points (학생 포인트)
 CREATE TABLE IF NOT EXISTS "student_points" (
