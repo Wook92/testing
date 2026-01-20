@@ -25,7 +25,6 @@ import { formatKoreanTime } from "@/lib/utils";
 type TeacherWorkRecord = {
   id: string;
   teacherId: string;
-  centerId: string;
   workDate: string;
   checkInAt: string | null;
   checkOutAt: string | null;
@@ -533,11 +532,10 @@ export default function ManagementPage() {
     perStudentBonusHigh: 0,
   });
 
-  // Get all salary settings for the center
+  // Get all salary settings
   type TeacherSalarySettingsType = {
     id: string;
     teacherId: string;
-    centerId: string;
     baseSalary: number;
     classBasePay: number;
     classBasePayMiddle: number;
@@ -585,7 +583,6 @@ export default function ManagementPage() {
   type SalaryAdjustmentType = {
     id: string;
     teacherId: string;
-    centerId: string;
     yearMonth: string;
     amount: number;
     description: string;
@@ -602,7 +599,7 @@ export default function ManagementPage() {
   const [newAdjustmentDescription, setNewAdjustmentDescription] = useState("");
 
   const createAdjustmentMutation = useMutation({
-    mutationFn: async (data: { teacherId: string; centerId: string; yearMonth: string; amount: number; description: string }) => {
+    mutationFn: async (data: { teacherId: string; yearMonth: string; amount: number; description: string }) => {
       return apiRequest("POST", `/api/teacher-salary-adjustments?actorId=${user?.id}`, data);
     },
     onSuccess: () => {
@@ -646,7 +643,7 @@ export default function ManagementPage() {
   const totalAdjustments = salaryAdjustments.reduce((sum, adj) => sum + adj.amount, 0);
 
   const saveSalarySettingsMutation = useMutation({
-    mutationFn: async (data: { teacherId: string; centerId: string; baseSalary: number; classBasePay: number; classBasePayMiddle: number; classBasePayHigh: number; studentThreshold: number; studentThresholdMiddle: number; studentThresholdHigh: number; perStudentBonus: number; perStudentBonusMiddle: number; perStudentBonusHigh: number }) => {
+    mutationFn: async (data: { teacherId: string; baseSalary: number; classBasePay: number; classBasePayMiddle: number; classBasePayHigh: number; studentThreshold: number; studentThresholdMiddle: number; studentThresholdHigh: number; perStudentBonus: number; perStudentBonusMiddle: number; perStudentBonusHigh: number }) => {
       return apiRequest("POST", "/api/teacher-salary-settings", { ...data, actorId: user?.id });
     },
     onSuccess: () => {

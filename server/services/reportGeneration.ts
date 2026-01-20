@@ -15,7 +15,6 @@ export interface StudentDataSummary {
   studentName: string;
   school?: string;
   grade?: string;
-  centerId: string;
   year: number;
   month: number;
   assessments: {
@@ -53,7 +52,6 @@ export interface StudentDataSummary {
 
 export async function gatherStudentData(
   studentId: string,
-  centerId: string,
   year: number,
   month: number
 ): Promise<StudentDataSummary> {
@@ -65,7 +63,7 @@ export async function gatherStudentData(
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0);
 
-  const allAssessments = await storage.getAssessmentsByCenter(centerId);
+  const allAssessments = await storage.getAllAssessments();
   const studentAssessments = allAssessments.filter(
     (a: Assessment & { studentId?: string }) => a.studentId === studentId
   );
@@ -131,7 +129,7 @@ export async function gatherStudentData(
 
   const clinicComments: string[] = [];
   const clinicProgress: string[] = [];
-  const clinicStudentsList = await storage.getClinicStudents(centerId);
+  const clinicStudentsList = await storage.getClinicStudentsGlobal();
   const studentClinic = clinicStudentsList.find((cs) => cs.studentId === studentId);
   if (studentClinic) {
     const records = await storage.getClinicWeeklyRecords(studentClinic.id);
@@ -145,7 +143,7 @@ export async function gatherStudentData(
 
   // Gather homework data
   const homeworkByClass = new Map<string, { className: string; assigned: number; completed: number }>();
-  const allHomework = await storage.getHomeworkByCenter(centerId);
+  const allHomework = await storage.getAllHomework();
   const studentEnrollments = await storage.getStudentEnrollments(studentId);
   const enrolledClassIds = studentEnrollments.map(e => e.classId);
   
@@ -185,7 +183,6 @@ export async function gatherStudentData(
     studentName: student.name,
     school: student.school || undefined,
     grade: student.grade || undefined,
-    centerId,
     year,
     month,
     assessments: assessmentData,
