@@ -142,9 +142,9 @@ function TimetableGrid({ classes, onClassClick, isStudent = false, teacherMap }:
                             {teacherMap.get(cls.teacherId)?.name}
                           </p>
                         )}
-                        {cls.classType !== "regular" && !isStudent && (
+                        {cls.classType === "assessment" && !isStudent && (
                           <Badge variant="secondary" className="text-[7px] md:text-[9px] mt-0.5 bg-white/50 hidden md:inline-flex">
-                            {cls.classType === "assessment" ? "평가" : cls.classType === "high_clinic" ? "고등클리닉" : "중등클리닉"}
+                            평가
                           </Badge>
                         )}
                       </button>
@@ -347,8 +347,6 @@ function CreateClassDialog({
             <SelectContent>
               <SelectItem value="regular">정규 수업</SelectItem>
               <SelectItem value="assessment">평가 수업</SelectItem>
-              <SelectItem value="high_clinic">고등클리닉</SelectItem>
-              <SelectItem value="middle_clinic">중등클리닉</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -1021,7 +1019,7 @@ function EditClassDialog({
             <div className="flex justify-between">
               <span className="text-muted-foreground">유형</span>
               <Badge variant="outline">
-                {classItem.classType === "regular" ? "정규 수업" : classItem.classType === "assessment" ? "평가 수업" : classItem.classType === "high_clinic" ? "고등클리닉" : "중등클리닉"}
+                {classItem.classType === "regular" ? "정규 수업" : "평가 수업"}
               </Badge>
             </div>
           </div>
