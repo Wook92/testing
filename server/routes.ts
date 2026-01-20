@@ -1120,9 +1120,9 @@ export async function registerRoutes(
   // Classes
   app.get("/api/classes", async (req, res) => {
     try {
-      // Single-academy mode: get all classes
+      // Single-academy mode: get all classes (filter out archived)
       const classes = await storage.getClassesGlobal();
-      res.json(classes);
+      res.json(classes.filter(c => !c.isArchived));
     } catch (error) {
       console.error("[GET classes] Error:", error);
       res.status(500).json({ error: "Failed to get classes" });
@@ -7238,21 +7238,6 @@ export async function registerRoutes(
   });
 
   // Class Plans Routes
-  app.get("/api/classes", async (req, res) => {
-    try {
-      const { actorId, centerId } = req.query;
-      if (!actorId) {
-        return res.status(401).json({ error: "인증이 필요합니다" });
-      }
-      
-      const allClasses = await storage.getClasses(centerId as string | undefined);
-      res.json(allClasses.filter(c => !c.isArchived));
-    } catch (error) {
-      console.error("Failed to get classes:", error);
-      res.status(500).json({ error: "Failed to get classes" });
-    }
-  });
-
   app.get("/api/class-plans/weekly", async (req, res) => {
     try {
       const { actorId, classId, weekStart } = req.query;
