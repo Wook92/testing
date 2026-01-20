@@ -25,10 +25,12 @@ export default function PointsManagementPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isUseDialogOpen, setIsUseDialogOpen] = useState(false);
 
-  const { data: students, isLoading } = useQuery<any[]>({
+  const { data: students, isLoading, isError, error } = useQuery<any[]>({
     queryKey: [`/api/students/with-points?actorId=${user?.id}`],
     enabled: !!user,
   });
+
+  console.log("Points management - user:", user?.id, "students:", students?.length, "isError:", isError, "error:", error);
 
   const addPointsMutation = useMutation({
     mutationFn: async (data: { studentId: string; amount: number; reason: string }) => {
@@ -263,6 +265,12 @@ export default function PointsManagementPage() {
                     </TableCell>
                   </TableRow>
                 ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-red-500">
+                    데이터를 불러오는 중 오류가 발생했습니다. 새로고침 해주세요.
+                  </TableCell>
+                </TableRow>
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
