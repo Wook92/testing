@@ -425,7 +425,7 @@ export interface IStorage {
   deleteMarketingCampaign(id: string): Promise<void>;
 
   // Monthly Financial Records
-  getMonthlyFinancialRecords(centerId: string, year?: number): Promise<MonthlyFinancialRecord[]>;
+  getMonthlyFinancialRecords(centerId?: string, year?: number): Promise<MonthlyFinancialRecord[]>;
   getMonthlyFinancialRecord(centerId: string, yearMonth: string): Promise<MonthlyFinancialRecord | undefined>;
   getMonthlyFinancialRecordById(id: string): Promise<MonthlyFinancialRecord | undefined>;
   createMonthlyFinancialRecord(data: InsertMonthlyFinancialRecord): Promise<MonthlyFinancialRecord>;
@@ -434,14 +434,18 @@ export interface IStorage {
 
   // Teacher Salary Settings (선생님 급여 설정)
   getTeacherSalarySettings(teacherId: string, centerId: string): Promise<TeacherSalarySettings | undefined>;
+  getTeacherSalarySettingsByTeacher(teacherId: string): Promise<TeacherSalarySettings | undefined>;
   getTeacherSalarySettingsByCenter(centerId: string): Promise<TeacherSalarySettings[]>;
+  getAllTeacherSalarySettings(): Promise<TeacherSalarySettings[]>;
   createTeacherSalarySettings(data: InsertTeacherSalarySettings): Promise<TeacherSalarySettings>;
   updateTeacherSalarySettings(id: string, data: Partial<InsertTeacherSalarySettings>): Promise<TeacherSalarySettings>;
   deleteTeacherSalarySettings(id: string): Promise<void>;
 
   // Teacher Salary Adjustments (급여 조정 항목)
   getTeacherSalaryAdjustments(teacherId: string, centerId: string, yearMonth: string): Promise<TeacherSalaryAdjustment[]>;
+  getTeacherSalaryAdjustmentsByTeacher(teacherId: string, yearMonth: string): Promise<TeacherSalaryAdjustment[]>;
   getTeacherSalaryAdjustmentsByCenter(centerId: string, yearMonth: string): Promise<TeacherSalaryAdjustment[]>;
+  getAllTeacherSalaryAdjustments(yearMonth: string): Promise<TeacherSalaryAdjustment[]>;
   createTeacherSalaryAdjustment(data: InsertTeacherSalaryAdjustment): Promise<TeacherSalaryAdjustment>;
   updateTeacherSalaryAdjustment(id: string, data: Partial<InsertTeacherSalaryAdjustment>): Promise<TeacherSalaryAdjustment>;
   deleteTeacherSalaryAdjustment(id: string): Promise<void>;
@@ -617,7 +621,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserCenters(userId: string): Promise<Center[]> {
     const ucs = await db.select().from(userCenters).where(eq(userCenters.userId, userId));
-    const centerIds = ucs.map((uc) => uc.centerId);
+    const centerIds = ucs.map((uc) => uc.centerId).filter((id): id is string => id !== null);
     if (centerIds.length === 0) return [];
     return await db.select().from(centers).where(inArray(centers.id, centerIds));
   }
@@ -2298,14 +2302,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertSolapiCredentials(data: InsertSolapiCredentials): Promise<SolapiCredentials> {
-    const existing = await this.getSolapiCredentials(data.centerId);
+    const centerId = data.centerId || '';
+    const existing = await this.getSolapiCredentials(centerId);
     if (existing) {
       const result = await db.update(solapiCredentials).set({
         apiKey: data.apiKey,
         apiSecret: data.apiSecret,
         senderNumber: data.senderNumber,
         updatedAt: new Date(),
-      }).where(eq(solapiCredentials.centerId, data.centerId)).returning();
+      }).where(eq(solapiCredentials.id, existing.id)).returning();
       return result[0];
     }
     const result = await db.insert(solapiCredentials).values(data).returning();
@@ -2323,7 +2328,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertStudyCafeSettings(data: InsertStudyCafeSettings): Promise<StudyCafeSettings> {
-    const existing = await this.getStudyCafeSettings(data.centerId);
+    const centerId = data.centerId || '';
+    const existing = await this.getStudyCafeSettings(centerId);
     if (existing) {
       const updateData: Record<string, any> = {
         isEnabled: data.isEnabled,
@@ -2333,7 +2339,7 @@ export class DatabaseStorage implements IStorage {
       if (data.entryPassword !== undefined) {
         updateData.entryPassword = data.entryPassword;
       }
-      const result = await db.update(studyCafeSettings).set(updateData).where(eq(studyCafeSettings.centerId, data.centerId)).returning();
+      const result = await db.update(studyCafeSettings).set(updateData).where(eq(studyCafeSettings.id, existing.id)).returning();
       return result[0];
     }
     const result = await db.insert(studyCafeSettings).values(data).returning();
@@ -3219,20 +3225,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Monthly Financial Records
-  async getMonthlyFinancialRecords(centerId: string, year?: number): Promise<MonthlyFinancialRecord[]> {
+  async getMonthlyFinancialRecords(centerId?: string, year?: number): Promise<MonthlyFinancialRecord[]> {
+    const conditions = [];
+    if (centerId) {
+      conditions.push(eq(monthlyFinancialRecords.centerId, centerId));
+    }
     if (year) {
       const startMonth = `${year}-01`;
       const endMonth = `${year}-12`;
+      conditions.push(gte(monthlyFinancialRecords.yearMonth, startMonth));
+      conditions.push(lte(monthlyFinancialRecords.yearMonth, endMonth));
+    }
+    if (conditions.length > 0) {
       return await db.select().from(monthlyFinancialRecords)
-        .where(and(
-          eq(monthlyFinancialRecords.centerId, centerId),
-          gte(monthlyFinancialRecords.yearMonth, startMonth),
-          lte(monthlyFinancialRecords.yearMonth, endMonth)
-        ))
+        .where(and(...conditions))
         .orderBy(desc(monthlyFinancialRecords.yearMonth));
     }
     return await db.select().from(monthlyFinancialRecords)
-      .where(eq(monthlyFinancialRecords.centerId, centerId))
       .orderBy(desc(monthlyFinancialRecords.yearMonth));
   }
 
@@ -3278,9 +3287,19 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getTeacherSalarySettingsByTeacher(teacherId: string): Promise<TeacherSalarySettings | undefined> {
+    const result = await db.select().from(teacherSalarySettings)
+      .where(eq(teacherSalarySettings.teacherId, teacherId));
+    return result[0];
+  }
+
   async getTeacherSalarySettingsByCenter(centerId: string): Promise<TeacherSalarySettings[]> {
     return await db.select().from(teacherSalarySettings)
       .where(eq(teacherSalarySettings.centerId, centerId));
+  }
+
+  async getAllTeacherSalarySettings(): Promise<TeacherSalarySettings[]> {
+    return await db.select().from(teacherSalarySettings);
   }
 
   async createTeacherSalarySettings(data: InsertTeacherSalarySettings): Promise<TeacherSalarySettings> {
@@ -3310,12 +3329,25 @@ export class DatabaseStorage implements IStorage {
       ));
   }
 
+  async getTeacherSalaryAdjustmentsByTeacher(teacherId: string, yearMonth: string): Promise<TeacherSalaryAdjustment[]> {
+    return await db.select().from(teacherSalaryAdjustments)
+      .where(and(
+        eq(teacherSalaryAdjustments.teacherId, teacherId),
+        eq(teacherSalaryAdjustments.yearMonth, yearMonth)
+      ));
+  }
+
   async getTeacherSalaryAdjustmentsByCenter(centerId: string, yearMonth: string): Promise<TeacherSalaryAdjustment[]> {
     return await db.select().from(teacherSalaryAdjustments)
       .where(and(
         eq(teacherSalaryAdjustments.centerId, centerId),
         eq(teacherSalaryAdjustments.yearMonth, yearMonth)
       ));
+  }
+
+  async getAllTeacherSalaryAdjustments(yearMonth: string): Promise<TeacherSalaryAdjustment[]> {
+    return await db.select().from(teacherSalaryAdjustments)
+      .where(eq(teacherSalaryAdjustments.yearMonth, yearMonth));
   }
 
   async createTeacherSalaryAdjustment(data: InsertTeacherSalaryAdjustment): Promise<TeacherSalaryAdjustment> {

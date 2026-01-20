@@ -3684,9 +3684,9 @@ export async function registerRoutes(
   app.get("/api/teachers/:id/classes", async (req, res) => {
     try {
       const teacherId = req.params.id;
-      const centerId = req.query.centerId as string;
+      const centerId = req.query.centerId as string || '';
       
-      let allClasses = await storage.getClasses(centerId);
+      let allClasses = await storage.getClasses(centerId || undefined);
       const teacherClasses = allClasses.filter((c) => c.teacherId === teacherId && !c.isArchived);
       
       res.json(teacherClasses);
@@ -3744,11 +3744,10 @@ export async function registerRoutes(
   // Attendance PINs - 출결번호 관리
   app.get("/api/attendance-pins", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      const pins = await storage.getAttendancePins(centerId);
+      const centerId = req.query.centerId as string || '';
+      const pins = centerId 
+        ? await storage.getAttendancePins(centerId)
+        : await storage.getAllAttendancePins();
       res.json(pins);
     } catch (error) {
       res.status(500).json({ error: "Failed to get attendance pins" });
@@ -3811,10 +3810,12 @@ export async function registerRoutes(
   app.get("/api/teacher-check-in-settings", async (req, res) => {
     try {
       const { teacherId, centerId } = req.query;
-      if (!teacherId || !centerId) {
-        return res.status(400).json({ error: "teacherId and centerId are required" });
+      if (!teacherId) {
+        return res.status(400).json({ error: "teacherId is required" });
       }
-      const settings = await storage.getTeacherCheckInSettings(teacherId as string, centerId as string);
+      const settings = centerId 
+        ? await storage.getTeacherCheckInSettings(teacherId as string, centerId as string)
+        : await storage.getTeacherCheckInSettingsByTeacher(teacherId as string);
       res.json(settings || null);
     } catch (error) {
       res.status(500).json({ error: "Failed to get teacher check-in settings" });
@@ -3825,10 +3826,9 @@ export async function registerRoutes(
   app.get("/api/teacher-check-in-settings/all", async (req, res) => {
     try {
       const { centerId } = req.query;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      const allSettings = await storage.getAllTeacherCheckInSettings(centerId as string);
+      const allSettings = centerId 
+        ? await storage.getAllTeacherCheckInSettings(centerId as string)
+        : await storage.getAllTeacherCheckInSettingsGlobal();
       // Attach teacher info to each setting
       const settingsWithTeachers = await Promise.all(
         allSettings.map(async (setting) => {
@@ -6442,14 +6442,10 @@ export async function registerRoutes(
   // ========================================
   app.get("/api/monthly-financials", async (req, res) => {
     try {
-      const centerId = req.query.centerId as string;
+      const centerId = req.query.centerId as string || '';
       const year = req.query.year ? parseInt(req.query.year as string) : undefined;
       
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      
-      const records = await storage.getMonthlyFinancialRecords(centerId, year);
+      const records = await storage.getMonthlyFinancialRecords(centerId || undefined, year);
       res.json(records);
     } catch (error: any) {
       console.error("Failed to get monthly financials:", error);
@@ -6674,10 +6670,9 @@ export async function registerRoutes(
     try {
       const { teacherId } = req.params;
       const { centerId } = req.query;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      const settings = await storage.getTeacherSalarySettings(teacherId, centerId as string);
+      const settings = centerId 
+        ? await storage.getTeacherSalarySettings(teacherId, centerId as string)
+        : await storage.getTeacherSalarySettingsByTeacher(teacherId);
       res.json(settings || null);
     } catch (error) {
       console.error("Failed to get teacher salary settings:", error);
@@ -6689,10 +6684,9 @@ export async function registerRoutes(
   app.get("/api/teacher-salary-settings", async (req, res) => {
     try {
       const { centerId } = req.query;
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      const settings = await storage.getTeacherSalarySettingsByCenter(centerId as string);
+      const settings = centerId 
+        ? await storage.getTeacherSalarySettingsByCenter(centerId as string)
+        : await storage.getAllTeacherSalarySettings();
       res.json(settings);
     } catch (error) {
       console.error("Failed to get teacher salary settings:", error);
@@ -6779,22 +6773,30 @@ export async function registerRoutes(
     try {
       const { centerId, yearMonth, teacherId } = req.query;
       
-      if (!centerId || !yearMonth) {
-        return res.status(400).json({ error: "centerId and yearMonth are required" });
+      if (!yearMonth) {
+        return res.status(400).json({ error: "yearMonth is required" });
       }
       
       if (teacherId) {
-        const adjustments = await storage.getTeacherSalaryAdjustments(
-          teacherId as string,
+        const adjustments = centerId 
+          ? await storage.getTeacherSalaryAdjustments(
+              teacherId as string,
+              centerId as string,
+              yearMonth as string
+            )
+          : await storage.getTeacherSalaryAdjustmentsByTeacher(
+              teacherId as string,
+              yearMonth as string
+            );
+        res.json(adjustments);
+      } else if (centerId) {
+        const adjustments = await storage.getTeacherSalaryAdjustmentsByCenter(
           centerId as string,
           yearMonth as string
         );
         res.json(adjustments);
       } else {
-        const adjustments = await storage.getTeacherSalaryAdjustmentsByCenter(
-          centerId as string,
-          yearMonth as string
-        );
+        const adjustments = await storage.getAllTeacherSalaryAdjustments(yearMonth as string);
         res.json(adjustments);
       }
     } catch (error) {
@@ -6887,12 +6889,10 @@ export async function registerRoutes(
       const { teacherId, yearMonth } = req.params;
       const { centerId } = req.query;
       
-      if (!centerId) {
-        return res.status(400).json({ error: "centerId is required" });
-      }
-      
       // Get salary settings
-      const settings = await storage.getTeacherSalarySettings(teacherId, centerId as string);
+      const settings = centerId 
+        ? await storage.getTeacherSalarySettings(teacherId, centerId as string)
+        : await storage.getTeacherSalarySettingsByTeacher(teacherId);
       if (!settings) {
         return res.json({ 
           baseSalary: 0, 
