@@ -725,4 +725,63 @@ ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "weekly_plan" text;
 
 -- Fix center_id to be nullable for single-academy mode
 ALTER TABLE "classes" ALTER COLUMN "center_id" DROP NOT NULL;
+
+-- Student Points (학생 포인트)
+CREATE TABLE IF NOT EXISTS "student_points" (
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "student_id" varchar NOT NULL UNIQUE,
+        "total_points" integer DEFAULT 0 NOT NULL,
+        "available_points" integer DEFAULT 0 NOT NULL
+);
+
+-- Point Transactions (포인트 내역)
+CREATE TABLE IF NOT EXISTS "point_transactions" (
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "student_id" varchar NOT NULL,
+        "amount" integer NOT NULL,
+        "type" text NOT NULL,
+        "description" text NOT NULL,
+        "created_at" timestamp DEFAULT now(),
+        "created_by" varchar
+);
+
+-- Class Plans (수업 계획)
+CREATE TABLE IF NOT EXISTS "class_plans" (
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "class_id" varchar NOT NULL,
+        "plan_type" text NOT NULL,
+        "period_start" date NOT NULL,
+        "content" text NOT NULL,
+        "created_at" timestamp DEFAULT now(),
+        "updated_at" timestamp DEFAULT now(),
+        "created_by" varchar
+);
+
+-- Announcements (공지사항)
+CREATE TABLE IF NOT EXISTS "announcements" (
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "created_by_id" varchar NOT NULL,
+        "title" text NOT NULL,
+        "content" text NOT NULL,
+        "target_type" text NOT NULL,
+        "target_ids" text[] NOT NULL,
+        "sms_sent_at" timestamp,
+        "sms_status" text,
+        "sms_recipients" text,
+        "created_at" timestamp DEFAULT now(),
+        "updated_at" timestamp DEFAULT now()
+);
+
+-- Calendar Events (학원 캘린더)
+CREATE TABLE IF NOT EXISTS "calendar_events" (
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "title" text NOT NULL,
+        "start_date" date NOT NULL,
+        "end_date" date,
+        "color" text DEFAULT '#3B82F6' NOT NULL,
+        "description" text,
+        "created_by" varchar NOT NULL,
+        "created_at" timestamp DEFAULT now(),
+        "updated_at" timestamp DEFAULT now()
+);
 `;
