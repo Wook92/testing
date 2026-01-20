@@ -375,7 +375,7 @@ export async function registerRoutes(
   app.get("/api/users", async (req, res) => {
     try {
       // Global mode - get all users
-      const users = await storage.getUsersGlobal();
+      const users = await storage.getUsers();
       res.json(users);
     } catch (error) {
       res.status(500).json({ error: "Failed to get users" });
@@ -1121,7 +1121,7 @@ export async function registerRoutes(
   app.get("/api/classes", async (req, res) => {
     try {
       // Single-academy mode: get all classes (filter out archived)
-      const classes = await storage.getClassesGlobal();
+      const classes = await storage.getClasses();
       res.json(classes.filter(c => !c.isArchived));
     } catch (error) {
       console.error("[GET classes] Error:", error);
@@ -1217,11 +1217,11 @@ export async function registerRoutes(
   app.get("/api/enrollments", async (req, res) => {
     try {
       // Get all classes (global)
-      const allClasses = await storage.getClassesGlobal();
+      const allClasses = await storage.getClasses();
       const classMap = new Map(allClasses.map((c: any) => [c.id, c]));
       
       // Get all students (global)
-      const allUsers = await storage.getUsersGlobal();
+      const allUsers = await storage.getUsers();
       const students = allUsers.filter(u => u.role === UserRole.STUDENT);
       
       // Get enrollments for each student
@@ -1263,7 +1263,7 @@ export async function registerRoutes(
           const cls = await storage.getClass(e.classId);
           if (cls) {
             const teacher = cls.teacherId ? await storage.getUser(cls.teacherId) : null;
-            const center = await storage.getCenter(cls.centerId);
+            const center = cls.centerId ? await storage.getCenter(cls.centerId) : null;
             return { ...e, class: cls, teacher, center };
           }
           return { ...e, class: null, teacher: null, center: null };
@@ -1303,7 +1303,7 @@ export async function registerRoutes(
         const clinicType = cls.classType === "high_clinic" ? "high" : "middle";
         
         // Check if student already exists for this center AND clinic type
-        const existingClinicStudent = await storage.getClinicStudentByStudentCenterAndType(studentId, cls.centerId, clinicType);
+        const existingClinicStudent = await storage.getClinicStudentByStudentCenterAndType(studentId, cls.centerId || '', clinicType);
         
         if (existingClinicStudent) {
           // Student already registered for this clinic type - just update days if needed
@@ -1398,7 +1398,7 @@ export async function registerRoutes(
           const cls = await storage.getClass(e.classId);
           if (!cls) return null;
           const teacher = cls.teacherId ? await storage.getUser(cls.teacherId) : null;
-          const center = await storage.getCenter(cls.centerId);
+          const center = cls.centerId ? await storage.getCenter(cls.centerId) : null;
           return {
             ...cls,
             enrollmentId: e.id,
@@ -2199,7 +2199,7 @@ export async function registerRoutes(
       }
       
       // Also notify principals in the center
-      const centerUsers = await storage.getCenterUsers(classInfo.centerId);
+      const centerUsers = classInfo.centerId ? await storage.getCenterUsers(classInfo.centerId) : [];
       const principals = centerUsers.filter(u => u.role === UserRole.PRINCIPAL);
       
       for (const principal of principals) {
@@ -2651,7 +2651,7 @@ export async function registerRoutes(
   app.post("/api/clinic-students/sync", async (req, res) => {
     try {
       // Get all clinic-type classes (global)
-      const allClasses = await storage.getClassesGlobal();
+      const allClasses = await storage.getClasses();
       const clinicClasses = allClasses.filter(c => c.classType === "high_clinic" || c.classType === "middle_clinic");
 
       let syncedCount = 0;
@@ -2664,7 +2664,7 @@ export async function registerRoutes(
         for (const enrollment of classEnrollments) {
           const existingClinicStudent = await storage.getClinicStudentByStudentCenterAndType(
             enrollment.studentId, 
-            cls.centerId,
+            cls.centerId || '',
             clinicType
           );
 
@@ -3337,11 +3337,11 @@ export async function registerRoutes(
   app.post("/api/attendance-pins/auto-generate", async (req, res) => {
     try {
       // Get all students (global)
-      const allUsers = await storage.getUsersGlobal();
+      const allUsers = await storage.getUsers();
       const students = allUsers.filter((u: User) => u.role === UserRole.STUDENT);
 
       // Get existing PINs (global)
-      const existingPins = await storage.getAttendancePinsGlobal();
+      const existingPins = await storage.getAllAttendancePins();
       const usedPins = existingPins.map((p) => p.pin);
       const studentsWithPins = new Set(existingPins.map((p) => p.studentId));
 
@@ -3644,7 +3644,7 @@ export async function registerRoutes(
       
       // Get center name from student's attendance record
       let centerName: string | undefined;
-      if (attendanceRecord) {
+      if (attendanceRecord && attendanceRecord.centerId) {
         const center = await storage.getCenter(attendanceRecord.centerId);
         centerName = center?.name;
       }
