@@ -742,6 +742,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(homework).where(inArray(homework.classId, classIds));
   }
 
+  async getAllHomework(): Promise<Homework[]> {
+    return await db.select().from(homework);
+  }
+
   async getStudentHomework(studentId: string): Promise<Homework[]> {
     const studentEnrollments = await this.getStudentEnrollments(studentId);
     const classIds = studentEnrollments.map((e) => e.classId);

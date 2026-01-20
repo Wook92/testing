@@ -2021,7 +2021,7 @@ export async function registerRoutes(
     try {
       const centerId = req.query.centerId as string | undefined;
       if (centerId) {
-        // Validate center exists
+        // Legacy support: filter by center if provided
         const center = await storage.getCenter(centerId);
         if (!center) {
           return res.json([]); // Return empty array for invalid center
@@ -2029,7 +2029,9 @@ export async function registerRoutes(
         const homework = await storage.getHomeworkByCenter(centerId);
         res.json(homework);
       } else {
-        res.json([]);
+        // Single-academy mode: return all homework
+        const homework = await storage.getAllHomework();
+        res.json(homework);
       }
     } catch (error: any) {
       console.error("[GET homework] Error:", error?.message || error);
