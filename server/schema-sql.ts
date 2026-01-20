@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS "assessments" (
 CREATE TABLE IF NOT EXISTS "attendance_pins" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "student_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "pin" text NOT NULL,
         "is_active" boolean DEFAULT true NOT NULL,
         "created_at" timestamp DEFAULT now()
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS "attendance_pins" (
 CREATE TABLE IF NOT EXISTS "teacher_check_in_settings" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "teacher_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "check_in_code" text NOT NULL,
         "sms_recipient_1" text,
         "sms_recipient_2" text,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS "teacher_check_in_settings" (
 CREATE TABLE IF NOT EXISTS "attendance_records" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "student_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "class_id" varchar,
         "check_in_at" timestamp DEFAULT now() NOT NULL,
         "check_in_date" date NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS "attendance_records" (
 CREATE TABLE IF NOT EXISTS "teacher_work_records" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "teacher_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "work_date" date NOT NULL,
         "check_in_at" timestamp,
         "check_out_at" timestamp,
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS "classes" (
         "class_type" text DEFAULT 'regular' NOT NULL,
         "teacher_id" varchar,
         "teacher_name" text,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "classroom" text,
         "days" text[] NOT NULL,
         "start_time" text NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS "clinic_assignments" (
         "student_id" varchar NOT NULL,
         "regular_teacher_id" varchar NOT NULL,
         "clinic_teacher_id" varchar,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "assignment_date" date NOT NULL,
         "title" text NOT NULL,
         "description" text,
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS "clinic_progress_logs" (
 
 CREATE TABLE IF NOT EXISTS "clinic_resources" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "file_name" text NOT NULL,
         "file_path" text NOT NULL,
         "description" text,
@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS "clinic_students" (
         "student_id" varchar NOT NULL,
         "regular_teacher_id" varchar NOT NULL,
         "clinic_teacher_id" varchar,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "clinic_type" text DEFAULT 'middle' NOT NULL,
         "grade" text,
         "class_group" text,
@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS "clinic_weekly_record_files" (
 
 CREATE TABLE IF NOT EXISTS "clinic_shared_instruction_groups" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "teacher_id" varchar NOT NULL,
         "week_start_date" date NOT NULL,
         "period" text NOT NULL,
@@ -284,7 +284,7 @@ CREATE TABLE IF NOT EXISTS "homework_submissions" (
 
 CREATE TABLE IF NOT EXISTS "message_templates" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "type" text NOT NULL,
         "title" text NOT NULL,
         "body" text NOT NULL,
@@ -321,7 +321,7 @@ CREATE TABLE IF NOT EXISTS "notifications" (
 
 CREATE TABLE IF NOT EXISTS "solapi_credentials" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "api_key" text NOT NULL,
         "api_secret" text NOT NULL,
         "sender_number" text NOT NULL,
@@ -343,7 +343,7 @@ CREATE TABLE IF NOT EXISTS "student_class_notes" (
 CREATE TABLE IF NOT EXISTS "student_monthly_reports" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "student_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "created_by_id" varchar NOT NULL,
         "year" integer NOT NULL,
         "month" integer NOT NULL,
@@ -366,7 +366,7 @@ CREATE TABLE IF NOT EXISTS "study_cafe_fixed_seats" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "seat_id" varchar NOT NULL,
         "student_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "start_date" date NOT NULL,
         "end_date" date NOT NULL,
         "assigned_by_id" varchar NOT NULL,
@@ -377,7 +377,7 @@ CREATE TABLE IF NOT EXISTS "study_cafe_reservations" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "seat_id" varchar NOT NULL,
         "student_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "start_at" timestamp NOT NULL,
         "end_at" timestamp NOT NULL,
         "status" text DEFAULT 'active' NOT NULL,
@@ -386,7 +386,7 @@ CREATE TABLE IF NOT EXISTS "study_cafe_reservations" (
 
 CREATE TABLE IF NOT EXISTS "study_cafe_seats" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "seat_number" integer NOT NULL,
         "row" integer NOT NULL,
         "col" integer NOT NULL,
@@ -395,7 +395,7 @@ CREATE TABLE IF NOT EXISTS "study_cafe_seats" (
 
 CREATE TABLE IF NOT EXISTS "study_cafe_settings" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "is_enabled" boolean DEFAULT false NOT NULL,
         "notice" text,
         "entry_password" text,
@@ -462,7 +462,7 @@ CREATE TABLE IF NOT EXISTS "tuition_access_passwords" (
 
 CREATE TABLE IF NOT EXISTS "tuition_guidances" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "guidance_text" text,
         "image_urls" text[] DEFAULT '{}',
         "updated_at" timestamp DEFAULT now(),
@@ -473,7 +473,7 @@ CREATE TABLE IF NOT EXISTS "tuition_notifications" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "student_id" varchar NOT NULL,
         "parent_id" varchar,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "sent_by_id" varchar NOT NULL,
         "calculated_total" integer NOT NULL,
         "sent_amount" integer NOT NULL,
@@ -491,7 +491,7 @@ CREATE TABLE IF NOT EXISTS "tuition_notifications" (
 CREATE TABLE IF NOT EXISTS "user_centers" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "user_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL
+        "center_id" varchar
 );
 
 CREATE TABLE IF NOT EXISTS "users" (
@@ -592,7 +592,7 @@ CREATE TABLE IF NOT EXISTS "student_exit_records" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "student_id" varchar NOT NULL,
         "student_name" text NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "exit_month" text NOT NULL,
         "reasons" text[] NOT NULL,
         "notes" text,
@@ -603,7 +603,7 @@ CREATE TABLE IF NOT EXISTS "student_exit_records" (
 -- Monthly Student Snapshots (월별 학생 수 스냅샷)
 CREATE TABLE IF NOT EXISTS "monthly_student_snapshots" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "month" text NOT NULL,
         "student_count" integer NOT NULL,
         "created_at" timestamp DEFAULT now()
@@ -613,7 +613,7 @@ CREATE TABLE IF NOT EXISTS "monthly_student_snapshots" (
 CREATE TABLE IF NOT EXISTS "student_textbook_purchases" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "student_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "textbook_name" varchar NOT NULL,
         "price" integer DEFAULT 0 NOT NULL,
         "purchase_date" timestamp DEFAULT now(),
@@ -625,7 +625,7 @@ CREATE TABLE IF NOT EXISTS "student_textbook_purchases" (
 -- Marketing Campaigns (마케팅 캠페인)
 CREATE TABLE IF NOT EXISTS "marketing_campaigns" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "name" text NOT NULL,
         "channel" text NOT NULL,
         "start_date" date NOT NULL,
@@ -639,7 +639,7 @@ CREATE TABLE IF NOT EXISTS "marketing_campaigns" (
 -- Monthly Financial Records (월별 재무 기록)
 CREATE TABLE IF NOT EXISTS "monthly_financial_records" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "year_month" text NOT NULL,
         "revenue_tuition" integer DEFAULT 0 NOT NULL,
         "revenue_tuition_details" text,
@@ -683,7 +683,7 @@ CREATE TABLE IF NOT EXISTS "monthly_financial_records" (
 CREATE TABLE IF NOT EXISTS "teacher_salary_settings" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "teacher_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "base_salary" integer DEFAULT 0 NOT NULL,
         "class_base_pay" integer DEFAULT 0 NOT NULL,
         "class_base_pay_middle" integer DEFAULT 0 NOT NULL,
@@ -704,7 +704,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS "teacher_center_unique" ON "teacher_salary_set
 CREATE TABLE IF NOT EXISTS "teacher_salary_adjustments" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         "teacher_id" varchar NOT NULL,
-        "center_id" varchar NOT NULL,
+        "center_id" varchar,
         "year_month" varchar(7) NOT NULL,
         "amount" integer NOT NULL,
         "description" text NOT NULL,
