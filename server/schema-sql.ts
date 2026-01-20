@@ -718,4 +718,11 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "daily_rate" integer;
 
 -- Add missing column to classes table (수업 레벨: 중등/고등)
 ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "class_level" text DEFAULT 'middle' NOT NULL;
+
+-- Add class planning columns to classes table (수업 계획)
+ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "monthly_plan" text;
+ALTER TABLE "classes" ADD COLUMN IF NOT EXISTS "weekly_plan" text;
+
+-- Fix center_id to be nullable for single-academy mode
+ALTER TABLE "classes" ALTER COLUMN "center_id" DROP NOT NULL;
 `;
