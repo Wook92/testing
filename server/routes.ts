@@ -7181,7 +7181,8 @@ export async function registerRoutes(
         return res.status(403).json({ error: "선생님 이상만 접근 가능합니다" });
       }
       
-      const students = await storage.getStudentsWithPoints(centerId as string);
+      const validCenterId = centerId && centerId !== "undefined" ? centerId as string : undefined;
+      const students = await storage.getStudentsWithPoints(validCenterId);
       res.json(students);
     } catch (error) {
       console.error("Failed to get students with points:", error);
